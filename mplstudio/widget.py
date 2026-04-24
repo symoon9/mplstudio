@@ -15,6 +15,48 @@ from .palettes import PALETTES, palette_names
 
 _PREVIEW_HEIGHT = 400  # px — fixed height for the fitted preview mode
 
+# CSS that turns the ToggleButton with class "mplstudio-size-toggle" into an
+# iOS-style switch.  We use ::after for the knob and mod-active (added by
+# ipywidgets when value=True) to slide it across.
+_TOGGLE_SWITCH_CSS = """
+<style>
+.mplstudio-size-toggle button.widget-toggle-button {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    background: #ccc !important;
+    border: none !important;
+    border-radius: 14px !important;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.15) !important;
+    cursor: pointer !important;
+    font-size: 0 !important;
+    height: 28px !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    position: relative !important;
+    transition: background 0.25s !important;
+    width: 52px !important;
+}
+.mplstudio-size-toggle button.widget-toggle-button::after {
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,.30);
+    content: '';
+    height: 22px;
+    left: 3px;
+    position: absolute;
+    top: 3px;
+    transition: transform 0.25s;
+    width: 22px;
+}
+.mplstudio-size-toggle button.widget-toggle-button.mod-active {
+    background: #4a9eff !important;
+}
+.mplstudio-size-toggle button.widget-toggle-button.mod-active::after {
+    transform: translateX(24px);
+}
+</style>
+"""
+
 
 def studio(fig: Figure | None = None) -> None:
     """Display the mplstudio control panel for *fig*.
@@ -34,24 +76,30 @@ def studio(fig: Figure | None = None) -> None:
     # ── size toggle (fitted preview vs actual size) ───────────────────────
     size_toggle = widgets.ToggleButton(
         value=False,
-        description="Fitted",
-        icon="expand",
-        button_style="",
-        layout=widgets.Layout(width="110px", height="28px"),
-        tooltip="Currently fitted — click to show at actual rendered size",
+        description="",
+        layout=widgets.Layout(width="52px", height="28px"),
+    )
+    size_toggle.add_class("mplstudio-size-toggle")
+
+    toggle_css = widgets.HTML(_TOGGLE_SWITCH_CSS)
+    toggle_label = widgets.HTML(
+        "<span style='font-size:12px;color:#888;margin-left:6px'>Fitted</span>"
+    )
+    toggle_row = widgets.HBox(
+        [toggle_css, size_toggle, toggle_label],
+        layout=widgets.Layout(align_items="center"),
     )
 
     def _on_size_toggle(change):
         if change["new"]:
-            size_toggle.description = "Actual size"
-            size_toggle.icon = "compress"
-            size_toggle.button_style = "info"
-            size_toggle.tooltip = "Currently actual size — click to fit to panel"
+            toggle_label.value = (
+                "<span style='font-size:12px;color:#4a9eff;"
+                "margin-left:6px;font-weight:600'>Actual size</span>"
+            )
         else:
-            size_toggle.description = "Fitted"
-            size_toggle.icon = "expand"
-            size_toggle.button_style = ""
-            size_toggle.tooltip = "Currently fitted — click to show at actual rendered size"
+            toggle_label.value = (
+                "<span style='font-size:12px;color:#888;margin-left:6px'>Fitted</span>"
+            )
         _refresh()
 
     size_toggle.observe(_on_size_toggle, names="value")
@@ -300,7 +348,7 @@ def studio(fig: Figure | None = None) -> None:
     header = widgets.HBox(
         [
             widgets.HTML("<b style='font-size:1.1em'>mplstudio</b>"),
-            size_toggle,
+            toggle_row,
         ],
         layout=widgets.Layout(
             justify_content="space-between",
