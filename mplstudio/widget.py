@@ -7,6 +7,8 @@ import ipywidgets as widgets
 from IPython.display import display
 from matplotlib.figure import Figure
 
+import matplotlib.colors as mcolors
+
 from . import style as S
 from .palettes import PALETTES, palette_names
 
@@ -58,12 +60,40 @@ def studio(fig: Figure | None = None, *, render_mode: str = "in-place (ipympl)")
     )
 
     # ── colors ────────────────────────────────────────────────────────────
+    color_mode = widgets.ToggleButtons(
+        options=["Palette", "Manual"],
+        value="Palette",
+        description="Color mode:",
+        style={"button_width": "80px"},
+        layout=widgets.Layout(margin="0 0 4px 0"),
+    )
+
+    # palette sub-section
     palette_select = widgets.Dropdown(
         options=palette_names(),
         description="Palette",
         style={"description_width": "100px"},
     )
     palette_preview = _build_palette_preview(palette_names()[0])
+
+    # manual sub-section — one ColorPicker per line, initialised to current color
+    line_colors = S.get_line_colors(fig)
+    line_labels = S.get_line_labels(fig)
+    manual_pickers = [
+        widgets.ColorPicker(
+            value=color,
+            description=(label[:14] + "…" if len(label) > 14 else label),
+            style={"description_width": "90px"},
+            concise=False,
+            layout=widgets.Layout(width="340px"),
+        )
+        for color, label in zip(line_colors, line_labels)
+    ]
+    manual_section = widgets.VBox(
+        manual_pickers if manual_pickers
+        else [widgets.HTML("<i style='color:#888'>No lines found in figure.</i>")]
+    )
+    manual_section.layout.display = "none"
 
     bg_color = widgets.ColorPicker(
         value="#ffffff", description="Background",
@@ -120,11 +150,24 @@ def studio(fig: Figure | None = None, *, render_mode: str = "in-place (ipympl)")
             S.redraw(fig)
         status.value = "<span style='color:green'>✓ Applied</span>"
 
+    def _on_color_mode_change(change):
+        if change["new"] == "Manual":
+            palette_box.layout.display = "none"
+            manual_section.layout.display = ""
+        else:
+            palette_box.layout.display = ""
+            manual_section.layout.display = "none"
+
+    color_mode.observe(_on_color_mode_change, names="value")
+
     def _on_apply(_):
         S.set_figure_size(fig, fig_width.value, fig_height.value)
         S.set_font_size(fig, font_size.value)
         S.set_legend_position(fig, legend_loc.value)
-        S.set_line_colors(fig, palette_select.value)
+        if color_mode.value == "Manual":
+            S.set_line_colors_manual(fig, [p.value for p in manual_pickers])
+        else:
+            S.set_line_colors(fig, palette_select.value)
         S.set_background_color(fig, bg_color.value)
         S.set_grid(fig, grid_toggle.value)
         S.set_spine_style(fig, spine_style.value)
@@ -173,7 +216,9 @@ def studio(fig: Figure | None = None, *, render_mode: str = "in-place (ipympl)")
         widgets.HTML("<b>Typography</b>"),
         font_size,
         widgets.HTML("<b>Colors</b>"),
+        color_mode,
         palette_box,
+        manual_section,
         bg_color,
         widgets.HTML("<b>Legend</b>"),
         legend_loc,

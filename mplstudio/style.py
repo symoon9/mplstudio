@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import matplotlib
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
@@ -40,6 +41,34 @@ def set_line_colors(fig: Figure, palette_name: str) -> None:
         lines = ax.get_lines()
         for i, line in enumerate(lines):
             line.set_color(colors[i % len(colors)])
+
+
+def set_line_colors_manual(fig: Figure, colors: list[str]) -> None:
+    """Apply per-line colors from a list of hex strings, one entry per line."""
+    all_lines = [line for ax in fig.axes for line in ax.get_lines()]
+    for line, color in zip(all_lines, colors):
+        line.set_color(color)
+
+
+def get_line_colors(fig: Figure) -> list[str]:
+    """Return current hex color of every line in the figure, in draw order."""
+    return [
+        mcolors.to_hex(line.get_color())
+        for ax in fig.axes
+        for line in ax.get_lines()
+    ]
+
+
+def get_line_labels(fig: Figure) -> list[str]:
+    """Return display labels for every line (falls back to 'Line N')."""
+    labels = []
+    n = 0
+    for ax in fig.axes:
+        for line in ax.get_lines():
+            n += 1
+            lbl = line.get_label()
+            labels.append(lbl if lbl and not lbl.startswith("_") else f"Line {n}")
+    return labels
 
 
 def set_background_color(fig: Figure, color: str) -> None:

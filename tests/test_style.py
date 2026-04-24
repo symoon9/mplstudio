@@ -62,5 +62,32 @@ def test_recommend_colorblind():
     assert all(len(p["colors"]) >= 3 for p in results)
 
 
+def test_set_line_colors_manual(fig):
+    S.set_line_colors_manual(fig, ["#ff0000"])
+    color = fig.axes[0].get_lines()[0].get_color()
+    import matplotlib.colors as mcolors
+    assert mcolors.to_hex(color).lower() == "#ff0000"
+
+
+def test_get_line_colors(fig):
+    S.set_line_colors(fig, "Okabe-Ito")
+    colors = S.get_line_colors(fig)
+    assert len(colors) == 1
+    assert colors[0].startswith("#")
+
+
+def test_get_line_labels(fig):
+    labels = S.get_line_labels(fig)
+    assert labels == ["line"]
+
+
+def test_get_line_labels_fallback():
+    f, ax = plt.subplots()
+    ax.plot([1, 2])  # no label → internal label starting with "_"
+    labels = S.get_line_labels(f)
+    assert labels == ["Line 1"]
+    plt.close(f)
+
+
 def test_studio_import():
     assert callable(mplstudio.studio)
