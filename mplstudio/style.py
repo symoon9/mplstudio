@@ -102,9 +102,11 @@ def set_legend_position(fig: Figure, location: str) -> None:
     for ax in fig.axes:
         legend = ax.get_legend()
         if legend:
-            handles, labels = ax.get_legend_handles_labels()
+            # Preserve user-edited label text when recreating the legend
+            handles = legend.legend_handles
+            labels = [t.get_text() for t in legend.get_texts()]
             if handles:
-                ax.legend(handles, labels, loc=location)
+                ax.legend(handles=handles, labels=labels, loc=location)
 
 
 def set_line_colors(fig: Figure, palette_name: str) -> None:
@@ -144,6 +146,69 @@ def get_line_labels(fig: Figure) -> list[str]:
         for ax in fig.axes
         for _, label in _labeled_artists(ax)
     ]
+
+
+def set_series_alpha(fig: Figure, alphas: list[float]) -> None:
+    """Set opacity per labeled series; call _refresh() after."""
+    idx = 0
+    for ax in fig.axes:
+        for artist, _ in _labeled_artists(ax):
+            if idx < len(alphas):
+                artist.set_alpha(float(alphas[idx]))
+            idx += 1
+
+
+def get_series_alpha(fig: Figure) -> list[float]:
+    return [
+        1.0 if artist.get_alpha() is None else float(artist.get_alpha())
+        for ax in fig.axes
+        for artist, _ in _labeled_artists(ax)
+    ]
+
+
+def set_title(fig: Figure, title: str, ax_idx: int = 0) -> None:
+    if ax_idx < len(fig.axes):
+        fig.axes[ax_idx].set_title(title)
+
+
+def set_xlabel(fig: Figure, label: str, ax_idx: int = 0) -> None:
+    if ax_idx < len(fig.axes):
+        fig.axes[ax_idx].set_xlabel(label)
+
+
+def set_ylabel(fig: Figure, label: str, ax_idx: int = 0) -> None:
+    if ax_idx < len(fig.axes):
+        fig.axes[ax_idx].set_ylabel(label)
+
+
+def set_xlim(fig: Figure, vmin: float, vmax: float, ax_idx: int = 0) -> None:
+    if ax_idx < len(fig.axes) and vmin < vmax:
+        fig.axes[ax_idx].set_xlim(vmin, vmax)
+
+
+def set_ylim(fig: Figure, vmin: float, vmax: float, ax_idx: int = 0) -> None:
+    if ax_idx < len(fig.axes) and vmin < vmax:
+        fig.axes[ax_idx].set_ylim(vmin, vmax)
+
+
+def set_legend_labels(fig: Figure, labels: list[str], ax_idx: int = 0) -> None:
+    """Edit legend entry text in-place without recreating the legend."""
+    if ax_idx >= len(fig.axes):
+        return
+    legend = fig.axes[ax_idx].get_legend()
+    if legend is None:
+        return
+    for text, new_label in zip(legend.get_texts(), labels):
+        text.set_text(new_label)
+
+
+def set_legend_bbox(fig: Figure, x: float, y: float, ax_idx: int = 0) -> None:
+    """Move the legend by adjusting bbox_to_anchor in-place."""
+    if ax_idx >= len(fig.axes):
+        return
+    legend = fig.axes[ax_idx].get_legend()
+    if legend:
+        legend.set_bbox_to_anchor((x, y))
 
 
 def set_background_color(fig: Figure, color: str) -> None:
