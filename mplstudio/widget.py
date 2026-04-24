@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import io
+
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
-from IPython.display import display
+from IPython.display import display, Image
 from matplotlib.figure import Figure
 
 import matplotlib.colors as mcolors
@@ -143,9 +145,14 @@ def studio(fig: Figure | None = None, *, render_mode: str = "in-place (ipympl)")
 
     def _refresh():
         if render_toggle.value == "re-render":
+            # savefig() always calls canvas.draw() internally, guaranteeing
+            # the latest artist state is rendered regardless of backend cache.
+            buf = io.BytesIO()
+            fig.savefig(buf, format="png", bbox_inches="tight", dpi=fig.dpi)
+            buf.seek(0)
             with render_out:
                 render_out.clear_output(wait=True)
-                display(fig)
+                display(Image(buf.read()))
         else:
             S.redraw(fig)
         status.value = "<span style='color:green'>✓ Applied</span>"

@@ -35,12 +35,29 @@ def set_legend_position(fig: Figure, location: str) -> None:
                 ax.legend(handles, labels, loc=location)
 
 
+def _sync_legend_colors(ax) -> None:
+    """Update legend handle colors to match the current line colors.
+
+    Legend handles are independent Line2D copies, so changing the original
+    line color does not automatically update the legend swatch.
+    """
+    legend = ax.get_legend()
+    if legend is None:
+        return
+    lines = ax.get_lines()
+    for handle, line in zip(legend.legend_handles, lines):
+        try:
+            handle.set_color(line.get_color())
+        except AttributeError:
+            pass
+
+
 def set_line_colors(fig: Figure, palette_name: str) -> None:
     colors = get_palette(palette_name)
     for ax in fig.axes:
-        lines = ax.get_lines()
-        for i, line in enumerate(lines):
+        for i, line in enumerate(ax.get_lines()):
             line.set_color(colors[i % len(colors)])
+        _sync_legend_colors(ax)
 
 
 def set_line_colors_manual(fig: Figure, colors: list[str]) -> None:
@@ -48,6 +65,8 @@ def set_line_colors_manual(fig: Figure, colors: list[str]) -> None:
     all_lines = [line for ax in fig.axes for line in ax.get_lines()]
     for line, color in zip(all_lines, colors):
         line.set_color(color)
+    for ax in fig.axes:
+        _sync_legend_colors(ax)
 
 
 def get_line_colors(fig: Figure) -> list[str]:

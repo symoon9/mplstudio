@@ -62,6 +62,25 @@ def test_recommend_colorblind():
     assert all(len(p["colors"]) >= 3 for p in results)
 
 
+def test_legend_color_synced_after_palette_change(fig):
+    import matplotlib.colors as mcolors
+    S.set_line_colors(fig, "Okabe-Ito")
+    expected = mcolors.to_hex(fig.axes[0].get_lines()[0].get_color())
+    handle_color = mcolors.to_hex(
+        fig.axes[0].get_legend().legend_handles[0].get_color()
+    )
+    assert handle_color.lower() == expected.lower()
+
+
+def test_legend_color_synced_after_manual_change(fig):
+    import matplotlib.colors as mcolors
+    S.set_line_colors_manual(fig, ["#123456"])
+    handle_color = mcolors.to_hex(
+        fig.axes[0].get_legend().legend_handles[0].get_color()
+    )
+    assert handle_color.lower() == "#123456"
+
+
 def test_set_line_colors_manual(fig):
     S.set_line_colors_manual(fig, ["#ff0000"])
     color = fig.axes[0].get_lines()[0].get_color()
