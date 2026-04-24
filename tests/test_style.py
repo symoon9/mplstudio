@@ -149,3 +149,77 @@ def test_scatter_legend_sync(scatter_fig):
 
 def test_studio_import():
     assert callable(mplstudio.studio)
+
+
+def test_available_sections():
+    sections = mplstudio.available_sections()
+    assert isinstance(sections, list)
+    assert "colors" in sections
+    assert "alpha" in sections
+    assert "axes" in sections
+    assert sections == sorted(sections)
+
+
+def test_set_series_alpha(fig):
+    S.set_series_alpha(fig, [0.4])
+    artist = fig.axes[0].get_lines()[0]
+    assert artist.get_alpha() == pytest.approx(0.4)
+
+
+def test_get_series_alpha(fig):
+    alphas = S.get_series_alpha(fig)
+    assert len(alphas) == 1
+    assert alphas[0] == pytest.approx(1.0)
+
+
+def test_set_series_alpha_updates_value(fig):
+    S.set_series_alpha(fig, [0.25])
+    alphas = S.get_series_alpha(fig)
+    assert alphas[0] == pytest.approx(0.25)
+
+
+def test_set_title(fig):
+    S.set_title(fig, "My Title")
+    assert fig.axes[0].get_title() == "My Title"
+
+
+def test_set_xlabel(fig):
+    S.set_xlabel(fig, "X axis")
+    assert fig.axes[0].get_xlabel() == "X axis"
+
+
+def test_set_ylabel(fig):
+    S.set_ylabel(fig, "Y axis")
+    assert fig.axes[0].get_ylabel() == "Y axis"
+
+
+def test_set_xlim(fig):
+    S.set_xlim(fig, 0.5, 2.5)
+    lo, hi = fig.axes[0].get_xlim()
+    assert lo == pytest.approx(0.5)
+    assert hi == pytest.approx(2.5)
+
+
+def test_set_xlim_ignored_when_inverted(fig):
+    before = fig.axes[0].get_xlim()
+    S.set_xlim(fig, 5.0, 1.0)  # vmin > vmax → no-op
+    assert fig.axes[0].get_xlim() == before
+
+
+def test_set_ylim(fig):
+    S.set_ylim(fig, -2.0, 2.0)
+    lo, hi = fig.axes[0].get_ylim()
+    assert lo == pytest.approx(-2.0)
+    assert hi == pytest.approx(2.0)
+
+
+def test_set_legend_labels(fig):
+    S.set_legend_labels(fig, ["renamed"])
+    texts = [t.get_text() for t in fig.axes[0].get_legend().get_texts()]
+    assert texts == ["renamed"]
+
+
+def test_set_legend_bbox(fig):
+    S.set_legend_bbox(fig, 0.8, 0.9)
+    legend = fig.axes[0].get_legend()
+    assert legend is not None  # smoke test — bbox_to_anchor set without error
