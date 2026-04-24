@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
+import base64
 import io
 
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
-from IPython.display import display, Image
+from IPython.display import display
 from matplotlib.figure import Figure
 
 from . import style as S
 from .palettes import PALETTES, palette_names
+
+_PREVIEW_HEIGHT = 400  # px — fixed height for the fitted preview mode
 
 
 def studio(fig: Figure | None = None) -> None:
@@ -28,19 +31,43 @@ def studio(fig: Figure | None = None) -> None:
     if fig is None:
         fig = plt.gcf()
 
+    # ── size toggle (fitted preview vs actual size) ───────────────────────
+    size_toggle = widgets.ToggleButton(
+        value=False,
+        description="Actual size",
+        icon="expand",
+        button_style="",
+        layout=widgets.Layout(width="120px", height="28px"),
+        tooltip="Toggle between fitted preview and actual rendered size",
+    )
+
     # ── rendered output ───────────────────────────────────────────────────
     render_out = widgets.Output(
-        layout=widgets.Layout(width="100%", margin="0 0 8px 0")
+        layout=widgets.Layout(width="100%", margin="0 0 4px 0")
     )
 
     def _refresh(*_):
         buf = io.BytesIO()
         fig.savefig(buf, format="png", bbox_inches="tight", dpi=fig.dpi)
         buf.seek(0)
+        img_b64 = base64.b64encode(buf.read()).decode()
+
+        if size_toggle.value:
+            # actual size — let the image render at its natural pixel dimensions
+            img_style = "max-width:100%;height:auto;display:block"
+        else:
+            # fitted preview — cap height so the control panel stays visible
+            img_style = (
+                f"max-height:{_PREVIEW_HEIGHT}px;width:auto;"
+                "max-width:100%;display:block;margin:0 auto"
+            )
+
+        img_html = f'<img src="data:image/png;base64,{img_b64}" style="{img_style}">'
         with render_out:
             render_out.clear_output(wait=True)
-            display(Image(buf.read()))
+            display(widgets.HTML(img_html))
 
+    size_toggle.observe(lambda _: _refresh(), names="value")
     _refresh()  # initial render
 
     # ── figure size ───────────────────────────────────────────────────────
@@ -250,9 +277,22 @@ def studio(fig: Figure | None = None) -> None:
         ),
     )
 
-    panel = widgets.VBox(
+    header = widgets.HBox(
         [
             widgets.HTML("<b style='font-size:1.1em'>mplstudio</b>"),
+            size_toggle,
+        ],
+        layout=widgets.Layout(
+            justify_content="space-between",
+            align_items="center",
+            width="100%",
+            margin="0 0 6px 0",
+        ),
+    )
+
+    panel = widgets.VBox(
+        [
+            header,
             render_out,
             widgets.HTML("<hr style='margin:4px 0'>"),
             grid,
