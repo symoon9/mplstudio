@@ -151,6 +151,15 @@ def test_studio_import():
     assert callable(mplstudio.studio)
 
 
+def test_available_sections():
+    sections = mplstudio.available_sections()
+    assert isinstance(sections, list)
+    assert "colors" in sections
+    assert "alpha" in sections
+    assert "axes" in sections
+    assert sections == sorted(sections)
+
+
 def test_set_series_alpha(fig):
     S.set_series_alpha(fig, [0.4])
     artist = fig.axes[0].get_lines()[0]

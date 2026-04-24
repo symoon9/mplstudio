@@ -29,6 +29,11 @@ _KNOWN_SECTIONS = frozenset({
 _GITHUB_ISSUES = "https://github.com/symoon9/mplstudio/issues"
 
 
+def available_sections() -> list[str]:
+    """Return the sorted list of valid section names for the ``show`` parameter of :func:`studio`."""
+    return sorted(_KNOWN_SECTIONS)
+
+
 def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
     """Display the mplstudio control panel for *fig*.
 
@@ -135,6 +140,7 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
                 padding="8px 10px",
                 border="1px solid #e0e0e0",
                 border_radius="6px",
+                overflow="hidden",
             ),
         )
 
@@ -199,7 +205,7 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
         color_mode = widgets.ToggleButtons(
             options=["Palette", "Manual"], value="Palette",
             description="Mode:", style={"button_width": "72px"},
-            layout=widgets.Layout(margin="0 0 4px 0"),
+            layout=widgets.Layout(width="100%", margin="0 0 4px 0"),
         )
         palette_select = widgets.Dropdown(
             options=palette_names(), description="Palette",
@@ -274,6 +280,16 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
     if "alpha" in active:
         alphas = S.get_series_alpha(fig)
         a_labels = S.get_line_labels(fig)
+
+        init_global = (sum(alphas) / len(alphas)) if alphas else 1.0
+        global_alpha = widgets.FloatSlider(
+            value=init_global, min=0.0, max=1.0, step=0.05,
+            description="All series",
+            style={"description_width": "82px"},
+            layout=widgets.Layout(width="100%"),
+            continuous_update=False,
+        )
+
         alpha_sliders = [
             widgets.FloatSlider(
                 value=a, min=0.0, max=1.0, step=0.05,
@@ -285,18 +301,47 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
             for a, lbl in zip(alphas, a_labels)
         ]
 
-        def _on_alpha(_):
+        _alpha_busy = [False]  # guard: prevent global→per-series loop
+
+        def _on_global_alpha(change):
+            if _alpha_busy[0]:
+                return
+            _alpha_busy[0] = True
+            for s in alpha_sliders:
+                s.value = change["new"]
+            _alpha_busy[0] = False
+            S.set_series_alpha(fig, [change["new"]] * len(alpha_sliders))
+            _refresh()
+
+        def _on_per_alpha(_):
+            if _alpha_busy[0]:
+                return
             S.set_series_alpha(fig, [s.value for s in alpha_sliders])
             _refresh()
 
+        global_alpha.observe(_on_global_alpha, names="value")
         for s in alpha_sliders:
-            s.observe(_on_alpha, names="value")
+            s.observe(_on_per_alpha, names="value")
 
-        sections.append(_section(
-            "Opacity",
-            *(alpha_sliders if alpha_sliders
-              else [widgets.HTML("<i style='color:#888'>No labeled series found.</i>")])
-        ))
+        alpha_children: list[widgets.Widget] = [global_alpha]
+        if alpha_sliders:
+            per_box = widgets.VBox(
+                alpha_sliders,
+                layout=widgets.Layout(width="100%"),
+            )
+            per_acc = widgets.Accordion(
+                children=[per_box],
+                selected_index=None,
+                layout=widgets.Layout(width="100%"),
+            )
+            per_acc.set_title(0, "Per series")
+            alpha_children.append(per_acc)
+        else:
+            alpha_children.append(
+                widgets.HTML("<i style='color:#888'>No labeled series found.</i>")
+            )
+
+        sections.append(_section("Opacity", *alpha_children))
 
     # ══ Axes ══════════════════════════════════════════════════════════════
     if "axes" in active and fig.axes:
@@ -454,6 +499,7 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
         spine_style = widgets.ToggleButtons(
             options=S.SPINE_STYLES, value="box",
             description="Spines:", style={"button_width": "84px"},
+            layout=widgets.Layout(width="100%"),
         )
 
         def _on_grid(_):
@@ -498,14 +544,15 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
     # ══ Unknown section warning ════════════════════════════════════════════
     if unknown:
         names_str = ", ".join(f"<code>{n}</code>" for n in sorted(unknown))
+        avail_str = ", ".join(f"<code>{n}</code>" for n in sorted(_KNOWN_SECTIONS))
         sections.append(widgets.HTML(f"""
 <div style="padding:8px 10px;border:1px solid #f5a623;border-radius:6px;
             background:#fffbf0;font-size:0.85em;color:#7a5300">
   <b>Unknown section(s):</b> {names_str}<br>
-  This parameter is not supported yet.
+  <b>Available sections:</b> {avail_str}<br>
   <a href="{_GITHUB_ISSUES}/new" target="_blank" style="color:#1a73e8">
     Open a GitHub issue
-  </a> to request it.
+  </a> to request a new section.
 </div>
 """))
 
@@ -513,9 +560,10 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
     grid = widgets.GridBox(
         sections,
         layout=widgets.Layout(
-            grid_template_columns="repeat(auto-fill, minmax(280px, 1fr))",
+            grid_template_columns="repeat(auto-fill, minmax(260px, 1fr))",
             grid_gap="8px",
             width="100%",
+            overflow="hidden",
         ),
     )
 
@@ -529,7 +577,7 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
 
     display(widgets.VBox(
         [header, render_out, widgets.HTML("<hr style='margin:4px 0'>"), grid],
-        layout=widgets.Layout(width="100%", padding="10px"),
+        layout=widgets.Layout(width="100%", padding="10px", overflow="hidden"),
     ))
 
 
