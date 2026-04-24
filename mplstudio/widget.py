@@ -547,12 +547,18 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
         avail_str = ", ".join(f"<code>{n}</code>" for n in sorted(_KNOWN_SECTIONS))
         sections.append(widgets.HTML(f"""
 <div style="padding:8px 10px;border:1px solid #f5a623;border-radius:6px;
-            background:#fffbf0;font-size:0.85em;color:#7a5300">
+            background:#fffbf0;font-size:0.85em;color:#7a5300;line-height:1.6">
+  <style>
+    .mplstudio-warn-{_mid[:8]} code {{
+      background:#f0d080;color:#3d2800;padding:1px 4px;
+      border-radius:3px;font-size:0.9em;
+    }}
+  </style>
+  <div class="mplstudio-warn-{_mid[:8]}">
   <b>Unknown section(s):</b> {names_str}<br>
-  <b>Available sections:</b> {avail_str}<br>
-  <a href="{_GITHUB_ISSUES}/new" target="_blank" style="color:#1a73e8">
-    Open a GitHub issue
-  </a> to request a new section.
+  <b>Available:</b> {avail_str}<br>
+  <a href="{_GITHUB_ISSUES}/new" target="_blank" style="color:#1a73e8">Open a GitHub issue</a> to request a new section.
+  </div>
 </div>
 """))
 
