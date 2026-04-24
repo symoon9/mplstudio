@@ -95,6 +95,11 @@ def studio(fig: Figure | None = None, *, render_mode: str = "in-place (ipympl)")
     )
     recommend_out = widgets.Output()
 
+    # ── re-render output widget (only used in re-render mode) ─────────────
+    # Keeps the figure alive — plt.close() would destroy the canvas and break
+    # subsequent apply calls.
+    render_out = widgets.Output()
+
     # ── apply button ──────────────────────────────────────────────────────
     apply_btn = widgets.Button(
         description="Apply",
@@ -108,8 +113,9 @@ def studio(fig: Figure | None = None, *, render_mode: str = "in-place (ipympl)")
 
     def _refresh():
         if render_toggle.value == "re-render":
-            plt.close(fig)
-            display(fig)
+            with render_out:
+                render_out.clear_output(wait=True)
+                display(fig)
         else:
             S.redraw(fig)
         status.value = "<span style='color:green'>✓ Applied</span>"
@@ -144,6 +150,12 @@ def studio(fig: Figure | None = None, *, render_mode: str = "in-place (ipympl)")
                     f"<b>{p['name']}</b> — {p['description']}<br>{swatch}<br>"
                 ))
 
+    def _on_render_mode_change(change):
+        render_out.layout.display = "" if change["new"] == "re-render" else "none"
+
+    render_out.layout.display = "none" if render_mode == "in-place (ipympl)" else ""
+    render_toggle.observe(_on_render_mode_change, names="value")
+
     apply_btn.on_click(_on_apply)
     palette_select.observe(_on_palette_change, names="value")
     cb_recommend.on_click(_on_recommend)
@@ -154,6 +166,7 @@ def studio(fig: Figure | None = None, *, render_mode: str = "in-place (ipympl)")
     panel = widgets.VBox([
         widgets.HTML("<b style='font-size:1.1em'>mplstudio</b>"),
         render_toggle,
+        render_out,
         widgets.HTML("<hr style='margin:4px 0'>"),
         widgets.HTML("<b>Figure size</b>"),
         fig_width, fig_height,

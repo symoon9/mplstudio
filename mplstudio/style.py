@@ -72,12 +72,15 @@ def set_spine_style(fig: Figure, style: str) -> None:
 
 
 def redraw(fig: Figure) -> None:
-    """Force a canvas refresh; works for both ipympl and inline backends."""
+    """Force a synchronous canvas refresh for both ipympl and inline backends.
+
+    draw_idle() is async and ipympl may deduplicate or skip repeated calls,
+    so we use the synchronous draw() followed by flush_events() instead.
+    """
     canvas = fig.canvas
-    if hasattr(canvas, "draw_idle"):
-        canvas.draw_idle()
-    else:
-        fig.canvas.draw()
+    canvas.draw()
+    if hasattr(canvas, "flush_events"):
+        canvas.flush_events()
 
 
 LEGEND_LOCATIONS = [

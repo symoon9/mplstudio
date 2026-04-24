@@ -46,6 +46,30 @@ PALETTES: list[dict] = [
         "tags": ["colorblind-safe", "high-contrast"],
         "description": "Maximum contrast for accessibility.",
     },
+    {
+        "name": "Nord",
+        "colors": ["#BF616A", "#D08770", "#EBCB8B", "#A3BE8C", "#88C0D0", "#81A1C1", "#5E81AC", "#B48EAD"],
+        "tags": ["categorical", "muted", "dark-background"],
+        "description": "Arctic, north-bluish accent colors from the Nord theme.",
+    },
+    {
+        "name": "Catppuccin Latte",
+        "colors": ["#D20F39", "#FE640B", "#DF8E1D", "#40A02B", "#04A5E5", "#8839EF", "#EA76CB", "#E64553"],
+        "tags": ["categorical", "pastel", "light-background"],
+        "description": "Warm pastel tones from the Catppuccin Latte theme.",
+    },
+    {
+        "name": "Dracula",
+        "colors": ["#FF5555", "#FFB86C", "#F1FA8C", "#50FA7B", "#8BE9FD", "#BD93F9", "#FF79C6", "#6272A4"],
+        "tags": ["categorical", "dark-background", "vibrant"],
+        "description": "Vivid accent colors from the Dracula dark theme.",
+    },
+    {
+        "name": "Tokyo Night",
+        "colors": ["#F7768E", "#FF9E64", "#E0AF68", "#9ECE6A", "#73DACA", "#7DCFFF", "#7AA2F7", "#BB9AF7"],
+        "tags": ["categorical", "dark-background", "vibrant"],
+        "description": "Neon-tinged accents from the Tokyo Night editor theme.",
+    },
 ]
 
 
