@@ -104,8 +104,47 @@ def test_get_line_labels_fallback():
     f, ax = plt.subplots()
     ax.plot([1, 2])  # no label → internal label starting with "_"
     labels = S.get_line_labels(f)
-    assert labels == ["Line 1"]
+    assert labels == []  # unlabelled artists are not in legend, so excluded
     plt.close(f)
+
+
+@pytest.fixture
+def scatter_fig():
+    f, ax = plt.subplots()
+    ax.scatter([1, 2, 3], [4, 5, 6], label="group A")
+    ax.scatter([1, 2, 3], [1, 2, 3], label="group B")
+    ax.legend()
+    yield f
+    plt.close(f)
+
+
+def test_scatter_palette_change(scatter_fig):
+    import matplotlib.colors as mcolors
+    S.set_line_colors(scatter_fig, "Okabe-Ito")
+    colors = S.get_line_colors(scatter_fig)
+    assert len(colors) == 2
+    assert colors[0].startswith("#")
+
+
+def test_scatter_manual_colors(scatter_fig):
+    import matplotlib.colors as mcolors
+    S.set_line_colors_manual(scatter_fig, ["#aabbcc", "#112233"])
+    colors = S.get_line_colors(scatter_fig)
+    assert mcolors.to_hex(mcolors.to_rgb(colors[0])) == "#aabbcc"
+    assert mcolors.to_hex(mcolors.to_rgb(colors[1])) == "#112233"
+
+
+def test_scatter_labels(scatter_fig):
+    labels = S.get_line_labels(scatter_fig)
+    assert labels == ["group A", "group B"]
+
+
+def test_scatter_legend_sync(scatter_fig):
+    import matplotlib.colors as mcolors
+    S.set_line_colors(scatter_fig, "Okabe-Ito")
+    # legend handles should have been synced
+    legend = scatter_fig.axes[0].get_legend()
+    assert legend is not None
 
 
 def test_studio_import():
