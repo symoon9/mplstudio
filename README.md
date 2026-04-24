@@ -1,2 +1,2 @@
 # mplstudio
-GUI tool for matplotlib sytling in jupyter notebooks
+GUI tool for matplotlib styling in jupyter notebooks
