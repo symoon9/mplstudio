@@ -34,12 +34,27 @@ def studio(fig: Figure | None = None) -> None:
     # ── size toggle (fitted preview vs actual size) ───────────────────────
     size_toggle = widgets.ToggleButton(
         value=False,
-        description="Actual size",
+        description="Fitted",
         icon="expand",
         button_style="",
-        layout=widgets.Layout(width="120px", height="28px"),
-        tooltip="Toggle between fitted preview and actual rendered size",
+        layout=widgets.Layout(width="110px", height="28px"),
+        tooltip="Currently fitted — click to show at actual rendered size",
     )
+
+    def _on_size_toggle(change):
+        if change["new"]:
+            size_toggle.description = "Actual size"
+            size_toggle.icon = "compress"
+            size_toggle.button_style = "info"
+            size_toggle.tooltip = "Currently actual size — click to fit to panel"
+        else:
+            size_toggle.description = "Fitted"
+            size_toggle.icon = "expand"
+            size_toggle.button_style = ""
+            size_toggle.tooltip = "Currently fitted — click to show at actual rendered size"
+        _refresh()
+
+    size_toggle.observe(_on_size_toggle, names="value")
 
     # ── rendered output ───────────────────────────────────────────────────
     render_out = widgets.Output(
@@ -53,21 +68,26 @@ def studio(fig: Figure | None = None) -> None:
         img_b64 = base64.b64encode(buf.read()).decode()
 
         if size_toggle.value:
-            # actual size — let the image render at its natural pixel dimensions
-            img_style = "max-width:100%;height:auto;display:block"
+            # actual size — natural pixel dimensions; wrapper scrolls horizontally
+            # if the figure is wider than the notebook
+            img_style = "height:auto;display:block"
+            div_style = "overflow-x:auto;width:100%"
         else:
-            # fitted preview — cap height so the control panel stays visible
+            # fitted preview — capped height keeps the control panel in place
             img_style = (
                 f"max-height:{_PREVIEW_HEIGHT}px;width:auto;"
                 "max-width:100%;display:block;margin:0 auto"
             )
+            div_style = "width:100%"
 
-        img_html = f'<img src="data:image/png;base64,{img_b64}" style="{img_style}">'
+        img_html = (
+            f'<div style="{div_style}">'
+            f'<img src="data:image/png;base64,{img_b64}" style="{img_style}">'
+            f'</div>'
+        )
         with render_out:
             render_out.clear_output(wait=True)
             display(widgets.HTML(img_html))
-
-    size_toggle.observe(lambda _: _refresh(), names="value")
     _refresh()  # initial render
 
     # ── figure size ───────────────────────────────────────────────────────
