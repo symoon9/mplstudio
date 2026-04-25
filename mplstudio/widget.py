@@ -52,8 +52,7 @@ def _theme_css(pid: str, dark: bool) -> str:
         warn_bg  = "#2a2030"
         warn_bdr = "#f38ba8"
         warn_txt = "#f38ba8"
-        code_bg  = "#313244"
-        code_txt = "#cba6f7"
+        arrow    = "%23a6adc8"  # muted URL-encoded for SVG fill
     else:
         bg       = "#f4f4f9"
         card     = "#ffffff"
@@ -66,8 +65,13 @@ def _theme_css(pid: str, dark: bool) -> str:
         warn_bg  = "#fffbf0"
         warn_bdr = "#f5a623"
         warn_txt = "#7a5300"
-        code_bg  = "#f0e8b0"
-        code_txt = "#3d2800"
+        arrow    = "%236b7280"  # muted URL-encoded for SVG fill
+
+    arrow_svg = (
+        f"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'"
+        f" width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z'"
+        f" fill='{arrow}'/%3E%3C/svg%3E\")"
+    )
 
     return f"""<style>
 /* ── mplstudio panel {pid} ── */
@@ -112,7 +116,7 @@ def _theme_css(pid: str, dark: bool) -> str:
   cursor: pointer;
   box-shadow: 0 1px 4px rgba(0,0,0,.25);
 }}
-/* toggle buttons */
+/* toggle buttons group */
 .mpl-s-{pid} .widget-toggle-buttons .widget-toggle-button {{
   background: {card} !important;
   border-color: {border} !important;
@@ -135,23 +139,31 @@ def _theme_css(pid: str, dark: bool) -> str:
   border-radius: 8px !important;
   box-shadow: none;
 }}
-/* text inputs and dropdowns */
+/* text inputs */
 .mpl-s-{pid} input[type=text],
-.mpl-s-{pid} select {{
+.mpl-s-{pid} input[type=number] {{
   background: {bg} !important;
   color: {text} !important;
   border: 1px solid {border} !important;
   border-radius: 6px !important;
 }}
+/* dropdown: custom arrow, remove native appearance */
+.mpl-s-{pid} select {{
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: {bg} !important;
+  background-image: {arrow_svg};
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  color: {text} !important;
+  border: 1px solid {border} !important;
+  border-radius: 6px !important;
+  padding-right: 28px !important;
+  cursor: pointer;
+}}
 /* checkbox accent color */
 .mpl-s-{pid} .widget-checkbox input {{ accent-color: {accent}; }}
-/* accordion header */
-.mpl-s-{pid} .p-Accordion-header {{
-  background: {bg} !important;
-  color: {text} !important;
-  border-color: {border} !important;
-  border-radius: 8px !important;
-}}
 /* hr divider */
 .mpl-s-{pid} hr {{ border-color: {hr_col}; }}
 /* warning block */
@@ -162,68 +174,74 @@ def _theme_css(pid: str, dark: bool) -> str:
   border-radius: 12px;
   padding: 8px 12px;
   font-size: 0.9em;
-  line-height: 1.6;
+  line-height: 1.7;
 }}
-.mpl-w-{pid} code {{
-  background: {code_bg};
-  color: {code_txt};
+.mpl-w-{pid} .avail code {{
+  background: {border};
+  color: {muted};
   padding: 1px 4px;
   border-radius: 3px;
   font-size: 0.88em;
 }}
-/* iOS-style toggle */
-.mpl-ios-{pid} {{
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  cursor: pointer;
-  vertical-align: middle;
-  user-select: none;
+/* Actual-size iOS toggle button */
+.mpl-sz-{pid} button {{
+  background: {tog_off} !important;
+  border: none !important;
+  border-radius: 12px !important;
+  width: 40px !important;
+  min-width: 40px !important;
+  height: 22px !important;
+  padding: 0 !important;
+  position: relative !important;
+  transition: background 0.2s !important;
+  overflow: visible !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
 }}
-.mpl-ios-{pid} .trk {{
-  position: relative;
-  width: 40px;
-  height: 22px;
-  background: {tog_off};
-  border-radius: 11px;
-  transition: background 0.25s;
-  flex-shrink: 0;
+.mpl-sz-{pid} button::before {{
+  content: '' !important;
+  position: absolute !important;
+  width: 18px !important;
+  height: 18px !important;
+  background: white !important;
+  border-radius: 50% !important;
+  top: 2px !important;
+  left: 2px !important;
+  transition: left 0.2s !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,.3) !important;
 }}
-.mpl-ios-{pid} .thm {{
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  background: #fff;
-  border-radius: 50%;
-  top: 2px;
-  left: 2px;
-  transition: left 0.25s;
-  box-shadow: 0 1px 3px rgba(0,0,0,.3);
+.mpl-sz-{pid} button.mod-active {{
+  background: {accent} !important;
 }}
-.mpl-ios-{pid}.on .trk {{ background: {accent}; }}
-.mpl-ios-{pid}.on .thm {{ left: 20px; }}
-.mpl-ios-{pid} .lbl {{ font-size: 13px; color: {muted}; }}
+.mpl-sz-{pid} button.mod-active::before {{
+  left: 20px !important;
+}}
+/* Per-series collapsible button */
+.mpl-per-{pid} button {{
+  background: {bg} !important;
+  border: 1px solid {border} !important;
+  border-radius: 8px !important;
+  color: {muted} !important;
+  font-size: 0.82em !important;
+  text-align: left !important;
+  padding: 4px 10px !important;
+  width: 100% !important;
+  cursor: pointer !important;
+}}
+.mpl-per-{pid} button:hover {{
+  background: {card} !important;
+}}
 </style>"""
-
-
-def _ios_toggle(cb_model_id: str, label: str, pid: str, sfx: str) -> widgets.HTML:
-    """Return an iOS-style toggle ``<span>`` that syncs with a hidden ipywidget Checkbox."""
-    eid = f"mpl-ios-{pid}-{sfx}"
-    return widgets.HTML(
-        f'<span id="{eid}" class="mpl-ios-{pid}" onclick="'
-        f'var el=document.getElementById(\'{eid}\');'
-        f'el.classList.toggle(\'on\');'
-        f'var on=el.classList.contains(\'on\');'
-        f'var cb=document.querySelector(\'[data-model-id=\\"{cb_model_id}\\"] input[type=checkbox]\');'
-        f'if(cb){{cb.checked=on;cb.dispatchEvent(new Event(\'change\',{{bubbles:true}}));}}'
-        f'"><span class="trk"><span class="thm"></span></span>'
-        f'<span class="lbl">{label}</span></span>'
-    )
 
 
 # ── main entry point ──────────────────────────────────────────────────────────
 
-def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
+def studio(
+    fig: Figure | None = None,
+    *,
+    show: list[str] | None = None,
+    dark: bool = False,
+) -> None:
     """Display the mplstudio control panel for *fig*.
 
     Parameters
@@ -236,6 +254,8 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
         ``"alpha"``, ``"axes"``, ``"legend"``, ``"grid_spines"``,
         ``"palette_suggestions"``.
         Unknown names produce a warning with a link to open a GitHub issue.
+    dark:
+        Use Catppuccin Mocha dark theme. Defaults to ``False`` (light/indigo theme).
     """
     if fig is None:
         fig = plt.gcf()
@@ -248,23 +268,21 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
         unknown = show_set - _KNOWN_SECTIONS
         active = show_set & _KNOWN_SECTIONS
 
-    # ── panel ID + theme ──────────────────────────────────────────────────
-    _dark_cb = widgets.Checkbox(value=False, indent=False, description="")
-    _dark_cb.layout.display = "none"
-    _pid = _dark_cb.model_id[:8]
+    # ── actual-size toggle (provides panel ID) ────────────────────────────
+    _size_tb = widgets.ToggleButton(
+        value=False, description="",
+        layout=widgets.Layout(width="40px", height="22px"),
+    )
+    _pid = _size_tb.model_id[:8]
+    _size_tb.add_class(f"mpl-sz-{_pid}")
 
-    css_w = widgets.HTML(value=_theme_css(_pid, False))
+    size_label = widgets.HTML(
+        "<span style='font-size:12px;color:#888;vertical-align:middle;"
+        "margin-left:6px'>Actual size</span>"
+    )
 
-    def _on_dark(change):
-        css_w.value = _theme_css(_pid, change["new"])
-
-    _dark_cb.observe(_on_dark, names="value")
-    dark_toggle = _ios_toggle(_dark_cb.model_id, "Dark", _pid, "dark")
-
-    # ── actual-size toggle ────────────────────────────────────────────────
-    _size_cb = widgets.Checkbox(value=False, indent=False, description="")
-    _size_cb.layout.display = "none"
-    size_toggle = _ios_toggle(_size_cb.model_id, "Actual size", _pid, "size")
+    # ── theme CSS ─────────────────────────────────────────────────────────
+    css_w = widgets.HTML(value=_theme_css(_pid, dark))
 
     # ── rendered output ───────────────────────────────────────────────────
     render_out = widgets.Output(
@@ -277,7 +295,7 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
         buf.seek(0)
         img_b64 = base64.b64encode(buf.read()).decode()
 
-        if _size_cb.value:
+        if _size_tb.value:
             div_style = "text-align:center;overflow-x:auto;width:100%"
             img_style = "height:auto;display:inline-block;vertical-align:top"
         else:
@@ -295,7 +313,7 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
             render_out.clear_output(wait=True)
             display(widgets.HTML(img_html))
 
-    _size_cb.observe(lambda _: _refresh(), names="value")
+    _size_tb.observe(lambda _: _refresh(), names="value")
     _refresh()
 
     # ── section builder ───────────────────────────────────────────────────
@@ -306,24 +324,6 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
         )
         vbox.add_class(f"mpl-c-{_pid}")
         return vbox
-
-    # ── helper: FloatText pair (min/max) ──────────────────────────────────
-    def _range_row(
-        label: str, lo: float, hi: float, on_change
-    ) -> tuple[widgets.HBox, widgets.FloatText, widgets.FloatText]:
-        w_lo = widgets.FloatText(
-            value=round(lo, 4), description=f"{label} min",
-            style={"description_width": "50px"},
-            layout=widgets.Layout(width="160px"),
-        )
-        w_hi = widgets.FloatText(
-            value=round(hi, 4), description="max",
-            style={"description_width": "30px"},
-            layout=widgets.Layout(width="130px"),
-        )
-        w_lo.observe(on_change, names="value")
-        w_hi.observe(on_change, names="value")
-        return widgets.HBox([w_lo, w_hi]), w_lo, w_hi
 
     sections: list[widgets.Widget] = []
 
@@ -581,15 +581,30 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
         if alpha_sliders:
             per_box = widgets.VBox(
                 alpha_sliders,
+                layout=widgets.Layout(
+                    width="100%", display="none",
+                    padding="4px 0 0 0",
+                ),
+            )
+            _per_open = [False]
+            per_btn = widgets.Button(
+                description="Per series  ▾",
+                button_style="",
                 layout=widgets.Layout(width="100%"),
             )
-            per_acc = widgets.Accordion(
-                children=[per_box],
-                selected_index=None,
-                layout=widgets.Layout(width="100%"),
-            )
-            per_acc.set_title(0, "Per series")
-            alpha_children.append(per_acc)
+            per_btn.add_class(f"mpl-per-{_pid}")
+
+            def _toggle_per(_):
+                if _per_open[0]:
+                    per_box.layout.display = "none"
+                    per_btn.description = "Per series  ▾"
+                else:
+                    per_box.layout.display = ""
+                    per_btn.description = "Per series  ▴"
+                _per_open[0] = not _per_open[0]
+
+            per_btn.on_click(_toggle_per)
+            alpha_children.extend([per_btn, per_box])
         else:
             alpha_children.append(
                 widgets.HTML("<i style='color:#888'>No labeled series found.</i>")
@@ -635,6 +650,27 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
         xlim = _cur_ax().get_xlim()
         ylim = _cur_ax().get_ylim()
 
+        xlim_lo = widgets.FloatText(
+            value=round(xlim[0], 4), description="X min",
+            style={"description_width": "50px"},
+            layout=widgets.Layout(width="100%"),
+        )
+        xlim_hi = widgets.FloatText(
+            value=round(xlim[1], 4), description="X max",
+            style={"description_width": "50px"},
+            layout=widgets.Layout(width="100%"),
+        )
+        ylim_lo = widgets.FloatText(
+            value=round(ylim[0], 4), description="Y min",
+            style={"description_width": "50px"},
+            layout=widgets.Layout(width="100%"),
+        )
+        ylim_hi = widgets.FloatText(
+            value=round(ylim[1], 4), description="Y max",
+            style={"description_width": "50px"},
+            layout=widgets.Layout(width="100%"),
+        )
+
         def _on_xlim(_):
             S.set_xlim(fig, xlim_lo.value, xlim_hi.value, ax_idx[0])
             _refresh()
@@ -642,9 +678,6 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
         def _on_ylim(_):
             S.set_ylim(fig, ylim_lo.value, ylim_hi.value, ax_idx[0])
             _refresh()
-
-        xlim_row, xlim_lo, xlim_hi = _range_row("X lim", xlim[0], xlim[1], _on_xlim)
-        ylim_row, ylim_lo, ylim_hi = _range_row("Y lim", ylim[0], ylim[1], _on_ylim)
 
         def _on_title(_):
             S.set_title(fig, title_input.value, ax_idx[0])
@@ -661,6 +694,10 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
         title_input.observe(_on_title, names="value")
         xlabel_input.observe(_on_xlabel, names="value")
         ylabel_input.observe(_on_ylabel, names="value")
+        xlim_lo.observe(_on_xlim, names="value")
+        xlim_hi.observe(_on_xlim, names="value")
+        ylim_lo.observe(_on_ylim, names="value")
+        ylim_hi.observe(_on_ylim, names="value")
 
         def _on_ax_select(change):
             ax_idx[0] = change["new"]
@@ -678,7 +715,8 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
 
         axes_children = (
             ([ax_selector] if ax_selector else [])
-            + [title_input, xlabel_input, ylabel_input, xlim_row, ylim_row]
+            + [title_input, xlabel_input, ylabel_input,
+               xlim_lo, xlim_hi, ylim_lo, ylim_hi]
         )
         sections.append(_section("Axes", *axes_children))
 
@@ -830,12 +868,18 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
 
     # ══ Unknown section warning ════════════════════════════════════════════
     if unknown:
-        names_str = ", ".join(f"<code>{n}</code>" for n in sorted(unknown))
-        avail_str = ", ".join(f"<code>{n}</code>" for n in sorted(_KNOWN_SECTIONS))
+        names_str = ", ".join(
+            "<code style='background:#fee2d5;color:#c0390b;"
+            f"padding:1px 5px;border-radius:4px;font-size:0.88em'>{n}</code>"
+            for n in sorted(unknown)
+        )
+        avail_str = ", ".join(
+            f"<code>{n}</code>" for n in sorted(_KNOWN_SECTIONS)
+        )
         sections.append(widgets.HTML(
             f'<div class="mpl-w-{_pid}">'
             f"<b>Unknown section(s):</b> {names_str}<br>"
-            f"<b>Available:</b> {avail_str}<br>"
+            f'<span class="avail"><b>Available:</b> {avail_str}</span><br>'
             f'<a href="{_GITHUB_ISSUES}/new" target="_blank" style="color:#1a73e8">'
             f"Open a GitHub issue</a> to request a new section."
             f"</div>"
@@ -862,8 +906,8 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
     )
 
     toggle_row = widgets.HBox(
-        [dark_toggle, _dark_cb, size_toggle, _size_cb],
-        layout=widgets.Layout(align_items="center", gap="14px"),
+        [_size_tb, size_label],
+        layout=widgets.Layout(align_items="center"),
     )
 
     header = widgets.HBox(
