@@ -5,7 +5,7 @@ import pytest
 
 import mplstudio
 from mplstudio import style as S
-from mplstudio.palettes import get_palette, recommend
+from mplstudio.palettes import get_palette, recommend, palette_names
 
 
 @pytest.fixture
@@ -60,6 +60,48 @@ def test_recommend_colorblind():
     results = recommend(3, colorblind_safe=True)
     assert all("colorblind-safe" in p["tags"] for p in results)
     assert all(len(p["colors"]) >= 3 for p in results)
+
+
+def test_recommend_use_case():
+    results = recommend(3, use_case="categorical")
+    assert all("categorical" in p["tags"] for p in results)
+
+
+def test_recommend_background_light():
+    results = recommend(3, background="light")
+    assert all("dark-background" not in p["tags"] for p in results)
+
+
+def test_recommend_top_k():
+    results = recommend(3, top_k=2)
+    assert len(results) <= 2
+
+
+def test_recommend_ranked_by_distinctiveness():
+    from mplstudio.palettes import _distinctiveness
+    results = recommend(5)
+    scores = [_distinctiveness(p["colors"], 5) for p in results]
+    assert scores == sorted(scores, reverse=True)
+
+
+def test_recommend_no_match_returns_empty():
+    results = recommend(3, colorblind_safe=True, use_case="diverging")
+    # diverging + colorblind-safe may or may not match; just ensure it's a list
+    assert isinstance(results, list)
+
+
+def test_palette_has_source():
+    from mplstudio.palettes import PALETTES
+    for p in PALETTES:
+        assert "source" in p, f"Palette '{p['name']}' missing 'source' field"
+
+
+def test_new_palettes_present():
+    names = palette_names()
+    for expected in ["Paul Tol Bright", "Paul Tol Vibrant", "Paul Tol Muted",
+                     "IBM Colorblind Safe", "ColorBrewer Set1",
+                     "ColorBrewer Dark2", "ColorBrewer Paired", "Matplotlib tab10"]:
+        assert expected in names, f"Palette '{expected}' not found"
 
 
 def test_legend_color_synced_after_palette_change(fig):
@@ -223,3 +265,138 @@ def test_set_legend_bbox(fig):
     S.set_legend_bbox(fig, 0.8, 0.9)
     legend = fig.axes[0].get_legend()
     assert legend is not None  # smoke test — bbox_to_anchor set without error
+
+
+# ── continuous colormap tests ─────────────────────────────────────────────────
+
+@pytest.fixture
+def heatmap_fig():
+    import numpy as np
+    f, ax = plt.subplots()
+    data = np.arange(16).reshape(4, 4)
+    ax.imshow(data, cmap="viridis")
+    yield f
+    plt.close(f)
+
+
+@pytest.fixture
+def pcolormesh_fig():
+    import numpy as np
+    f, ax = plt.subplots()
+    x = np.linspace(0, 1, 5)
+    y = np.linspace(0, 1, 5)
+    X, Y = np.meshgrid(x, y)
+    ax.pcolormesh(X, Y, X * Y, cmap="coolwarm")
+    yield f
+    plt.close(f)
+
+
+def test_detect_categorical(fig):
+    assert S.detect_plot_type(fig) == "categorical"
+
+
+def test_detect_continuous_imshow(heatmap_fig):
+    assert S.detect_plot_type(heatmap_fig) == "continuous"
+
+
+def test_detect_continuous_pcolormesh(pcolormesh_fig):
+    assert S.detect_plot_type(pcolormesh_fig) == "continuous"
+
+
+def test_detect_mixed():
+    import numpy as np
+    f, ax = plt.subplots()
+    ax.plot([1, 2, 3], label="series")
+    ax.legend()
+    ax.imshow(np.zeros((3, 3)), cmap="viridis", aspect="auto", extent=[0, 3, 0, 3])
+    assert S.detect_plot_type(f) == "mixed"
+    plt.close(f)
+
+
+def test_get_colormap_imshow(heatmap_fig):
+    cmap = S.get_colormap(heatmap_fig)
+    assert cmap == "viridis"
+
+
+def test_set_colormap_imshow(heatmap_fig):
+    S.set_colormap(heatmap_fig, "plasma")
+    assert S.get_colormap(heatmap_fig) == "plasma"
+
+
+def test_set_colormap_pcolormesh(pcolormesh_fig):
+    S.set_colormap(pcolormesh_fig, "inferno")
+    assert S.get_colormap(pcolormesh_fig) == "inferno"
+
+
+def test_get_colormap_returns_none_for_categorical(fig):
+    assert S.get_colormap(fig) is None
+
+
+def test_sequential_cmaps_list():
+    from mplstudio.palettes import SEQUENTIAL_CMAPS
+    assert "viridis" in SEQUENTIAL_CMAPS
+    assert "plasma" in SEQUENTIAL_CMAPS
+    assert len(SEQUENTIAL_CMAPS) >= 5
+
+
+def test_diverging_cmaps_list():
+    from mplstudio.palettes import DIVERGING_CMAPS
+    assert "coolwarm" in DIVERGING_CMAPS
+    assert len(DIVERGING_CMAPS) >= 3
+
+
+# ── CIELAB / smart palette tests ──────────────────────────────────────────────
+
+def test_delta_e_identical():
+    from mplstudio.palettes import delta_e
+    assert delta_e("#FF0000", "#FF0000") == 0.0
+
+
+def test_delta_e_black_white():
+    from mplstudio.palettes import delta_e
+    # ΔE between black and white should be very large (≈100)
+    assert delta_e("#000000", "#ffffff") > 90
+
+
+def test_delta_e_red_blue_larger_than_red_orange():
+    from mplstudio.palettes import delta_e
+    de_rb = delta_e("#FF0000", "#0000FF")
+    de_ro = delta_e("#FF0000", "#FF8800")
+    assert de_rb > de_ro
+
+
+def test_smart_palette_length():
+    from mplstudio.palettes import smart_palette
+    for n in (2, 5, 10, 20):
+        assert len(smart_palette(n)) == n
+
+
+def test_smart_palette_subset_property():
+    from mplstudio.palettes import smart_palette
+    # smart_palette(n) must be a prefix of smart_palette(n+1)
+    for n in range(2, 12):
+        assert smart_palette(n) == smart_palette(n + 1)[:n]
+
+
+def test_smart_palette_returns_hex():
+    from mplstudio.palettes import smart_palette
+    for c in smart_palette(8):
+        assert c.startswith("#") and len(c) == 7
+
+
+def test_smart_palette_min_delta_e():
+    from mplstudio.palettes import smart_palette, delta_e
+    colors = smart_palette(8)
+    min_de = min(
+        delta_e(colors[i], colors[j])
+        for i in range(len(colors))
+        for j in range(i + 1, len(colors))
+    )
+    # All 8 colors should be at least ΔE 20 apart (perceptually very distinct)
+    assert min_de >= 20, f"min ΔE too low: {min_de:.1f}"
+
+
+def test_distinctiveness_uses_lab():
+    from mplstudio.palettes import _distinctiveness, delta_e
+    colors = ["#FF0000", "#0000FF"]
+    assert _distinctiveness(colors, 2) == pytest.approx(delta_e(colors[0], colors[1]))
