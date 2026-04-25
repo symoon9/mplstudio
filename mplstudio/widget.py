@@ -516,8 +516,25 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
 
     # ══ Palette Suggestions ═══════════════════════════════════════════════
     if "palette_suggestions" in active:
+        suggest_use_case = widgets.Dropdown(
+            options=[("Any", None), ("Categorical", "categorical"),
+                     ("Sequential", "sequential"), ("Diverging", "diverging")],
+            value=None, description="Use case",
+            style={"description_width": "68px"},
+            layout=widgets.Layout(width="100%"),
+        )
+        suggest_bg = widgets.Dropdown(
+            options=[("Any", None), ("Light bg", "light"), ("Dark bg", "dark")],
+            value=None, description="Background",
+            style={"description_width": "68px"},
+            layout=widgets.Layout(width="100%"),
+        )
+        suggest_cb = widgets.Checkbox(
+            value=True, description="Colorblind-safe only",
+            layout=widgets.Layout(width="100%"),
+        )
         cb_recommend = widgets.Button(
-            description="Suggest colorblind-safe palette",
+            description="Find palettes",
             button_style="info", layout=widgets.Layout(width="100%"),
         )
         recommend_out = widgets.Output()
@@ -525,21 +542,37 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
         def _on_recommend(_):
             from .palettes import recommend
             n = len(S.get_line_labels(fig)) or 3
-            suggestions = recommend(n, colorblind_safe=True)
+            suggestions = recommend(
+                n,
+                colorblind_safe=suggest_cb.value,
+                use_case=suggest_use_case.value,
+                background=suggest_bg.value,
+                top_k=4,
+            )
             with recommend_out:
                 recommend_out.clear_output()
-                for p in suggestions[:3]:
+                if not suggestions:
+                    display(widgets.HTML(
+                        "<i style='color:#888'>No palettes match the current filters.</i>"
+                    ))
+                    return
+                for p in suggestions:
                     swatch = "".join(
                         f"<span style='background:{c};display:inline-block;"
-                        f"width:16px;height:16px;margin:1px;border-radius:2px'></span>"
+                        f"width:14px;height:14px;margin:1px;border-radius:2px'></span>"
                         for c in p["colors"][:n]
                     )
                     display(widgets.HTML(
-                        f"<b>{p['name']}</b> — {p['description']}<br>{swatch}<br>"
+                        f"<b>{p['name']}</b> {swatch}<br>"
+                        f"<span style='font-size:0.82em;color:#555'>{p['description']}</span><br>"
+                        f"<span style='font-size:0.78em;color:#888'>{p['source']}</span><br>"
                     ))
 
         cb_recommend.on_click(_on_recommend)
-        sections.append(_section("Palette Suggestions", cb_recommend, recommend_out))
+        sections.append(_section(
+            "Palette Suggestions",
+            suggest_use_case, suggest_bg, suggest_cb, cb_recommend, recommend_out,
+        ))
 
     # ══ Unknown section warning ════════════════════════════════════════════
     if unknown:

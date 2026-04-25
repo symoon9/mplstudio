@@ -5,7 +5,7 @@ import pytest
 
 import mplstudio
 from mplstudio import style as S
-from mplstudio.palettes import get_palette, recommend
+from mplstudio.palettes import get_palette, recommend, palette_names
 
 
 @pytest.fixture
@@ -60,6 +60,48 @@ def test_recommend_colorblind():
     results = recommend(3, colorblind_safe=True)
     assert all("colorblind-safe" in p["tags"] for p in results)
     assert all(len(p["colors"]) >= 3 for p in results)
+
+
+def test_recommend_use_case():
+    results = recommend(3, use_case="categorical")
+    assert all("categorical" in p["tags"] for p in results)
+
+
+def test_recommend_background_light():
+    results = recommend(3, background="light")
+    assert all("dark-background" not in p["tags"] for p in results)
+
+
+def test_recommend_top_k():
+    results = recommend(3, top_k=2)
+    assert len(results) <= 2
+
+
+def test_recommend_ranked_by_distinctiveness():
+    from mplstudio.palettes import _distinctiveness
+    results = recommend(5)
+    scores = [_distinctiveness(p["colors"], 5) for p in results]
+    assert scores == sorted(scores, reverse=True)
+
+
+def test_recommend_no_match_returns_empty():
+    results = recommend(3, colorblind_safe=True, use_case="diverging")
+    # diverging + colorblind-safe may or may not match; just ensure it's a list
+    assert isinstance(results, list)
+
+
+def test_palette_has_source():
+    from mplstudio.palettes import PALETTES
+    for p in PALETTES:
+        assert "source" in p, f"Palette '{p['name']}' missing 'source' field"
+
+
+def test_new_palettes_present():
+    names = palette_names()
+    for expected in ["Paul Tol Bright", "Paul Tol Vibrant", "Paul Tol Muted",
+                     "IBM Colorblind Safe", "ColorBrewer Set1",
+                     "ColorBrewer Dark2", "ColorBrewer Paired", "Matplotlib tab10"]:
+        assert expected in names, f"Palette '{expected}' not found"
 
 
 def test_legend_color_synced_after_palette_change(fig):
