@@ -11,7 +11,9 @@ from IPython.display import display
 from matplotlib.figure import Figure
 
 from . import style as S
-from .palettes import PALETTES, palette_names, SEQUENTIAL_CMAPS, DIVERGING_CMAPS
+from .palettes import (
+    PALETTES, palette_names, SEQUENTIAL_CMAPS, DIVERGING_CMAPS, smart_palette,
+)
 
 _PREVIEW_HEIGHT = 400  # px — fixed height for the fitted preview mode
 
@@ -220,10 +222,11 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
 
         if plot_type in ("categorical", "mixed"):
             color_mode = widgets.ToggleButtons(
-                options=["Palette", "Manual"], value="Palette",
-                description="Mode:", style={"button_width": "72px"},
+                options=["Palette", "Manual", "Smart"], value="Palette",
+                description="Mode:", style={"button_width": "62px"},
                 layout=widgets.Layout(width="100%", margin="0 0 4px 0"),
             )
+            # ── Palette sub-section ───────────────────────────────────────
             palette_select = widgets.Dropdown(
                 options=palette_names(), description="Palette",
                 style={"description_width": "58px"},
@@ -234,7 +237,7 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
                 [palette_select, palette_preview_w],
                 layout=widgets.Layout(width="100%"),
             )
-
+            # ── Manual sub-section ────────────────────────────────────────
             line_colors = S.get_line_colors(fig)
             line_labels = S.get_line_labels(fig)
             manual_pickers = [
@@ -251,10 +254,30 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
                 else [widgets.HTML("<i style='color:#888'>No labeled series found.</i>")]
             )
             manual_section.layout.display = "none"
+            # ── Smart sub-section ─────────────────────────────────────────
+            _smart_init_n = max(2, min(n_series or 5, 10))
+            smart_n = widgets.IntSlider(
+                value=_smart_init_n, min=2, max=20, step=1,
+                description="Colors (n)",
+                style={"description_width": "78px"},
+                layout=widgets.Layout(width="100%"),
+                continuous_update=False,
+            )
+            smart_preview_w = widgets.HTML(
+                value=_swatches_div(smart_palette(_smart_init_n))
+            )
+            smart_section = widgets.VBox(
+                [smart_n, smart_preview_w],
+                layout=widgets.Layout(width="100%"),
+            )
+            smart_section.layout.display = "none"
 
             def _apply_colors():
-                if color_mode.value == "Manual":
+                mode = color_mode.value
+                if mode == "Manual":
                     S.set_line_colors_manual(fig, [p.value for p in manual_pickers])
+                elif mode == "Smart":
+                    S.set_line_colors_manual(fig, smart_palette(smart_n.value))
                 else:
                     S.set_line_colors(fig, palette_select.value)
                 _refresh()
@@ -263,21 +286,29 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
                 palette_preview_w.value = _build_palette_preview(change["new"]).value
                 _apply_colors()
 
+            def _on_smart_n(change):
+                smart_preview_w.value = _swatches_div(smart_palette(change["new"]))
+                _apply_colors()
+
             def _on_color_mode_change(change):
+                palette_col.layout.display = "none"
+                manual_section.layout.display = "none"
+                smart_section.layout.display = "none"
                 if change["new"] == "Manual":
-                    palette_col.layout.display = "none"
                     manual_section.layout.display = ""
+                elif change["new"] == "Smart":
+                    smart_section.layout.display = ""
                 else:
                     palette_col.layout.display = ""
-                    manual_section.layout.display = "none"
                 _apply_colors()
 
             palette_select.observe(_on_palette_change, names="value")
             color_mode.observe(_on_color_mode_change, names="value")
+            smart_n.observe(_on_smart_n, names="value")
             for picker in manual_pickers:
                 picker.observe(lambda _: _apply_colors(), names="value")
 
-            cat_box_children = [color_mode, palette_col, manual_section]
+            cat_box_children = [color_mode, palette_col, manual_section, smart_section]
 
         # ── Continuous / colormap controls ────────────────────────────────
         cmap_box_children: list[widgets.Widget] = []
@@ -682,17 +713,19 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
     ))
 
 
-def _build_palette_preview(name: str) -> widgets.HTML:
-    from .palettes import get_palette
-    colors = get_palette(name)
-    swatches = "".join(
+def _swatches_div(colors: list[str]) -> str:
+    """Return an HTML string of flex-wrapped color swatches."""
+    spans = "".join(
         f"<span style='background:{c};display:inline-block;width:16px;height:16px;"
         f"margin:2px 2px 0 0;border-radius:3px;border:1px solid #ccc'></span>"
         for c in colors
     )
-    return widgets.HTML(
-        value=f"<div style='display:flex;flex-wrap:wrap;margin-top:4px'>{swatches}</div>"
-    )
+    return f"<div style='display:flex;flex-wrap:wrap;margin-top:4px'>{spans}</div>"
+
+
+def _build_palette_preview(name: str) -> widgets.HTML:
+    from .palettes import get_palette
+    return widgets.HTML(value=_swatches_div(get_palette(name)))
 
 
 def _build_colormap_gradient(cmap_name: str, steps: int = 24) -> widgets.HTML:

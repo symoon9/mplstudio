@@ -343,3 +343,60 @@ def test_diverging_cmaps_list():
     from mplstudio.palettes import DIVERGING_CMAPS
     assert "coolwarm" in DIVERGING_CMAPS
     assert len(DIVERGING_CMAPS) >= 3
+
+
+# ── CIELAB / smart palette tests ──────────────────────────────────────────────
+
+def test_delta_e_identical():
+    from mplstudio.palettes import delta_e
+    assert delta_e("#FF0000", "#FF0000") == 0.0
+
+
+def test_delta_e_black_white():
+    from mplstudio.palettes import delta_e
+    # ΔE between black and white should be very large (≈100)
+    assert delta_e("#000000", "#ffffff") > 90
+
+
+def test_delta_e_red_blue_larger_than_red_orange():
+    from mplstudio.palettes import delta_e
+    de_rb = delta_e("#FF0000", "#0000FF")
+    de_ro = delta_e("#FF0000", "#FF8800")
+    assert de_rb > de_ro
+
+
+def test_smart_palette_length():
+    from mplstudio.palettes import smart_palette
+    for n in (2, 5, 10, 20):
+        assert len(smart_palette(n)) == n
+
+
+def test_smart_palette_subset_property():
+    from mplstudio.palettes import smart_palette
+    # smart_palette(n) must be a prefix of smart_palette(n+1)
+    for n in range(2, 12):
+        assert smart_palette(n) == smart_palette(n + 1)[:n]
+
+
+def test_smart_palette_returns_hex():
+    from mplstudio.palettes import smart_palette
+    for c in smart_palette(8):
+        assert c.startswith("#") and len(c) == 7
+
+
+def test_smart_palette_min_delta_e():
+    from mplstudio.palettes import smart_palette, delta_e
+    colors = smart_palette(8)
+    min_de = min(
+        delta_e(colors[i], colors[j])
+        for i in range(len(colors))
+        for j in range(i + 1, len(colors))
+    )
+    # All 8 colors should be at least ΔE 20 apart (perceptually very distinct)
+    assert min_de >= 20, f"min ΔE too low: {min_de:.1f}"
+
+
+def test_distinctiveness_uses_lab():
+    from mplstudio.palettes import _distinctiveness, delta_e
+    colors = ["#FF0000", "#0000FF"]
+    assert _distinctiveness(colors, 2) == pytest.approx(delta_e(colors[0], colors[1]))

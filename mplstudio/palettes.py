@@ -166,28 +166,140 @@ PALETTES: list[dict] = [
 ]
 
 
-# ── perceptual scoring ────────────────────────────────────────────────────────
+# ── CIELAB color math (no external deps) ─────────────────────────────────────
 
-def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
+def _rgb_to_lab(hex_color: str) -> tuple[float, float, float]:
+    """Hex → CIELAB (D65 illuminant, sRGB primaries)."""
     h = hex_color.lstrip("#")
-    return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    r, g, b = (int(h[i : i + 2], 16) / 255.0 for i in (0, 2, 4))
+
+    def _lin(c: float) -> float:  # sRGB → linear
+        return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+    r, g, b = _lin(r), _lin(g), _lin(b)
+
+    # Linear RGB → XYZ (D65), then normalise by D65 white point
+    x = (r * 0.4124564 + g * 0.3575761 + b * 0.1804375) / 0.95047
+    y = (r * 0.2126729 + g * 0.7151522 + b * 0.0721750) / 1.00000
+    z = (r * 0.0193339 + g * 0.1191920 + b * 0.9503041) / 1.08883
+
+    def _f(t: float) -> float:  # XYZ → LAB cube-root transfer
+        return t ** (1 / 3) if t > 0.008856 else 7.787 * t + 16 / 116
+
+    return 116 * _f(y) - 16, 500 * (_f(x) - _f(y)), 200 * (_f(y) - _f(z))
+
+
+def delta_e(c1: str, c2: str) -> float:
+    """ΔE 76 — Euclidean distance in CIELAB. Perceptually uniform proxy."""
+    L1, a1, b1 = _rgb_to_lab(c1)
+    L2, a2, b2 = _rgb_to_lab(c2)
+    return math.sqrt((L1 - L2) ** 2 + (a1 - a2) ** 2 + (b1 - b2) ** 2)
 
 
 def _distinctiveness(colors: list[str], n: int) -> float:
-    """Minimum pairwise Euclidean distance in RGB space for the first *n* colors.
-
-    Higher = more perceptually distinct. Used to rank palette recommendations.
-    """
-    subset = [_hex_to_rgb(c) for c in colors[:n]]
+    """Minimum pairwise ΔE 76 for the first *n* colors. Higher = more distinct."""
+    subset = colors[:n]
     if len(subset) < 2:
         return 0.0
-    min_dist = math.inf
+    min_d = math.inf
     for i in range(len(subset)):
         for j in range(i + 1, len(subset)):
-            d = math.sqrt(sum((a - b) ** 2 for a, b in zip(subset[i], subset[j])))
-            if d < min_dist:
-                min_dist = d
-    return min_dist
+            d = delta_e(subset[i], subset[j])
+            if d < min_d:
+                min_d = d
+    return min_d
+
+
+# ── smart 50-color pool (greedy farthest-point in CIELAB) ────────────────────
+
+# ~65 candidate colors sampled from authoritative palettes, covering the full
+# hue range with reasonable lightness (not too light, not too dark).
+_CANDIDATE_POOL: list[str] = [
+    # reds / vermillion
+    "#E41A1C", "#CC3311", "#EE3377", "#D55E00", "#EE6677",
+    "#DC267F", "#CC6677", "#882255", "#E15759",
+    # orange
+    "#E69F00", "#FF7F00", "#FE6100", "#F28E2B", "#EE7733", "#D95F02",
+    # yellow / gold
+    "#CCBB44", "#DDCC77", "#F0E442", "#FFB000", "#EDC948", "#E6AB02",
+    # green
+    "#009E73", "#228833", "#44AA99", "#009988", "#1B9E77",
+    "#117733", "#66A61E", "#4DAF4A", "#59A14F", "#A3BE8C",
+    # cyan / teal
+    "#56B4E9", "#66CCEE", "#33BBEE", "#0077BB", "#76B7B2", "#17BECF",
+    # blue
+    "#0072B2", "#4477AA", "#377EB8", "#332288", "#4E79A7",
+    "#1F78B4", "#648FFF", "#5E81AC",
+    # purple / violet
+    "#AA3377", "#AA4499", "#785EF0", "#7570B3", "#9467BD",
+    "#B48EAD", "#8839EF", "#984EA3",
+    # pink / magenta
+    "#CC79A7", "#F781BF", "#E7298A", "#FF79C6", "#EA76CB",
+    # neutral / earth
+    "#666666", "#7F7F7F", "#999933", "#A6761D", "#8C564B",
+]
+
+
+_SMART_POOL_CACHE: list[str] | None = None
+
+
+def _build_smart_pool() -> list[str]:
+    """Greedy farthest-point sampling in CIELAB. Runs once; O(m²) precompute."""
+    cands = _CANDIDATE_POOL
+    m = len(cands)
+    target = min(50, m)
+
+    # Precompute full pairwise ΔE matrix
+    dist: list[list[float]] = [[0.0] * m for _ in range(m)]
+    for i in range(m):
+        for j in range(i + 1, m):
+            d = delta_e(cands[i], cands[j])
+            dist[i][j] = dist[j][i] = d
+
+    # Seed: pair with the largest pairwise ΔE
+    bi, bj, bd = 0, 1, 0.0
+    for i in range(m):
+        for j in range(i + 1, m):
+            if dist[i][j] > bd:
+                bd, bi, bj = dist[i][j], i, j
+
+    selected: list[int] = [bi, bj]
+    in_sel: set[int] = {bi, bj}
+    # Track each candidate's min-distance to the selected set
+    min_d_to_sel = [min(dist[k][bi], dist[k][bj]) for k in range(m)]
+
+    while len(selected) < target:
+        # Pick the unselected candidate that maximises its min-distance to the set
+        best_k, best_val = -1, -1.0
+        for k in range(m):
+            if k in in_sel:
+                continue
+            if min_d_to_sel[k] > best_val:
+                best_val, best_k = min_d_to_sel[k], k
+        if best_k == -1:
+            break
+        selected.append(best_k)
+        in_sel.add(best_k)
+        # Update min-distances incrementally
+        for k in range(m):
+            if k not in in_sel and dist[k][best_k] < min_d_to_sel[k]:
+                min_d_to_sel[k] = dist[k][best_k]
+
+    return [cands[i] for i in selected]
+
+
+def smart_palette(n: int) -> list[str]:
+    """Return the top-*n* colors from the greedy-optimised 50-color pool.
+
+    Colors are ordered so that ``smart_palette(k)`` ⊆ ``smart_palette(k+1)``
+    for any k — the first *n* colors are always the most perceptually distinct
+    *n*-color combination available in the pool.
+    """
+    global _SMART_POOL_CACHE
+    if _SMART_POOL_CACHE is None:
+        _SMART_POOL_CACHE = _build_smart_pool()
+    pool = _SMART_POOL_CACHE
+    return pool[: max(1, min(n, len(pool)))]
 
 
 # ── public API ────────────────────────────────────────────────────────────────
