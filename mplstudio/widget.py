@@ -36,6 +36,193 @@ def available_sections() -> list[str]:
     return sorted(_KNOWN_SECTIONS)
 
 
+# ── theme helpers ─────────────────────────────────────────────────────────────
+
+def _theme_css(pid: str, dark: bool) -> str:
+    """Return a scoped ``<style>`` block for *pid* in light or dark mode."""
+    if dark:
+        bg       = "#1e1e2e"
+        card     = "#181825"
+        border   = "#313244"
+        text     = "#cdd6f4"
+        muted    = "#a6adc8"
+        accent   = "#89b4fa"
+        tog_off  = "#45475a"
+        hr_col   = "#313244"
+        warn_bg  = "#2a2030"
+        warn_bdr = "#f38ba8"
+        warn_txt = "#f38ba8"
+        code_bg  = "#313244"
+        code_txt = "#cba6f7"
+    else:
+        bg       = "#f4f4f9"
+        card     = "#ffffff"
+        border   = "#e4e4eb"
+        text     = "#1e1e2e"
+        muted    = "#6b7280"
+        accent   = "#6366f1"
+        tog_off  = "#d1d5db"
+        hr_col   = "#e4e4eb"
+        warn_bg  = "#fffbf0"
+        warn_bdr = "#f5a623"
+        warn_txt = "#7a5300"
+        code_bg  = "#f0e8b0"
+        code_txt = "#3d2800"
+
+    return f"""<style>
+/* ── mplstudio panel {pid} ── */
+.mpl-s-{pid} {{
+  --mpl-accent: {accent};
+  background: {bg};
+  border-radius: 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: {text};
+}}
+.mpl-c-{pid} {{
+  background: {card};
+  border: 1px solid {border};
+  border-radius: 12px;
+  box-sizing: border-box;
+  overflow: hidden;
+}}
+.mpl-t-{pid} {{
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.75em;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: {muted};
+}}
+/* sliders */
+.mpl-s-{pid} .widget-slider .ui-slider {{
+  background: {border};
+  border: none;
+  border-radius: 4px;
+}}
+.mpl-s-{pid} .widget-slider .ui-slider .ui-slider-handle {{
+  background: {accent};
+  border: none;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  top: -4px;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,.25);
+}}
+/* toggle buttons */
+.mpl-s-{pid} .widget-toggle-buttons .widget-toggle-button {{
+  background: {card} !important;
+  border-color: {border} !important;
+  color: {text} !important;
+  border-radius: 8px !important;
+  font-size: 0.85em;
+  transition: background 0.15s, color 0.15s;
+}}
+.mpl-s-{pid} .widget-toggle-buttons .widget-toggle-button.mod-active {{
+  background: {accent} !important;
+  border-color: {accent} !important;
+  color: #fff !important;
+  box-shadow: none;
+}}
+/* info/action button */
+.mpl-s-{pid} .widget-button.mod-info {{
+  background: {accent} !important;
+  border-color: {accent} !important;
+  color: #fff !important;
+  border-radius: 8px !important;
+  box-shadow: none;
+}}
+/* text inputs and dropdowns */
+.mpl-s-{pid} input[type=text],
+.mpl-s-{pid} select {{
+  background: {bg} !important;
+  color: {text} !important;
+  border: 1px solid {border} !important;
+  border-radius: 6px !important;
+}}
+/* checkbox accent color */
+.mpl-s-{pid} .widget-checkbox input {{ accent-color: {accent}; }}
+/* accordion header */
+.mpl-s-{pid} .p-Accordion-header {{
+  background: {bg} !important;
+  color: {text} !important;
+  border-color: {border} !important;
+  border-radius: 8px !important;
+}}
+/* hr divider */
+.mpl-s-{pid} hr {{ border-color: {hr_col}; }}
+/* warning block */
+.mpl-w-{pid} {{
+  background: {warn_bg};
+  border: 1px solid {warn_bdr};
+  color: {warn_txt};
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 0.9em;
+  line-height: 1.6;
+}}
+.mpl-w-{pid} code {{
+  background: {code_bg};
+  color: {code_txt};
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 0.88em;
+}}
+/* iOS-style toggle */
+.mpl-ios-{pid} {{
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  vertical-align: middle;
+  user-select: none;
+}}
+.mpl-ios-{pid} .trk {{
+  position: relative;
+  width: 40px;
+  height: 22px;
+  background: {tog_off};
+  border-radius: 11px;
+  transition: background 0.25s;
+  flex-shrink: 0;
+}}
+.mpl-ios-{pid} .thm {{
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: left 0.25s;
+  box-shadow: 0 1px 3px rgba(0,0,0,.3);
+}}
+.mpl-ios-{pid}.on .trk {{ background: {accent}; }}
+.mpl-ios-{pid}.on .thm {{ left: 20px; }}
+.mpl-ios-{pid} .lbl {{ font-size: 13px; color: {muted}; }}
+</style>"""
+
+
+def _ios_toggle(cb_model_id: str, label: str, pid: str, sfx: str) -> widgets.HTML:
+    """Return an iOS-style toggle ``<span>`` that syncs with a hidden ipywidget Checkbox."""
+    eid = f"mpl-ios-{pid}-{sfx}"
+    return widgets.HTML(
+        f'<span id="{eid}" class="mpl-ios-{pid}" onclick="'
+        f'var el=document.getElementById(\'{eid}\');'
+        f'el.classList.toggle(\'on\');'
+        f'var on=el.classList.contains(\'on\');'
+        f'var cb=document.querySelector(\'[data-model-id=\\"{cb_model_id}\\"] input[type=checkbox]\');'
+        f'if(cb){{cb.checked=on;cb.dispatchEvent(new Event(\'change\',{{bubbles:true}}));}}'
+        f'"><span class="trk"><span class="thm"></span></span>'
+        f'<span class="lbl">{label}</span></span>'
+    )
+
+
+# ── main entry point ──────────────────────────────────────────────────────────
+
 def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
     """Display the mplstudio control panel for *fig*.
 
@@ -61,45 +248,23 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
         unknown = show_set - _KNOWN_SECTIONS
         active = show_set & _KNOWN_SECTIONS
 
-    # ── size toggle ───────────────────────────────────────────────────────
+    # ── panel ID + theme ──────────────────────────────────────────────────
+    _dark_cb = widgets.Checkbox(value=False, indent=False, description="")
+    _dark_cb.layout.display = "none"
+    _pid = _dark_cb.model_id[:8]
+
+    css_w = widgets.HTML(value=_theme_css(_pid, False))
+
+    def _on_dark(change):
+        css_w.value = _theme_css(_pid, change["new"])
+
+    _dark_cb.observe(_on_dark, names="value")
+    dark_toggle = _ios_toggle(_dark_cb.model_id, "Dark", _pid, "dark")
+
+    # ── actual-size toggle ────────────────────────────────────────────────
     _size_cb = widgets.Checkbox(value=False, indent=False, description="")
     _size_cb.layout.display = "none"
-    _mid = _size_cb.model_id
-
-    _toggle_html = widgets.HTML(f"""
-<style>
-.mpl-sw-{_mid[:8]} {{
-    position: relative; display: inline-block;
-    width: 60px; height: 34px; vertical-align: middle;
-}}
-.mpl-sw-{_mid[:8]} input {{ opacity: 0; width: 0; height: 0; }}
-.mpl-sl-{_mid[:8]} {{
-    position: absolute; cursor: pointer;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: #ccc; transition: .4s; border-radius: 34px;
-}}
-.mpl-sl-{_mid[:8]}:before {{
-    position: absolute; content: "";
-    height: 26px; width: 26px; left: 4px; bottom: 4px;
-    background-color: white; transition: .4s; border-radius: 50%;
-}}
-.mpl-sw-{_mid[:8]} input:checked + .mpl-sl-{_mid[:8]} {{ background-color: #2196F3; }}
-.mpl-sw-{_mid[:8]} input:checked + .mpl-sl-{_mid[:8]}:before {{ transform: translateX(26px); }}
-</style>
-<label class="mpl-sw-{_mid[:8]}" style="vertical-align:middle;cursor:pointer">
-  <input type="checkbox" onchange="
-    var cb = document.querySelector('[data-model-id=\\"{_mid}\\"] input[type=checkbox]');
-    if (cb) {{ cb.checked = this.checked; cb.dispatchEvent(new Event('change', {{bubbles:true}})); }}
-  ">
-  <span class="mpl-sl-{_mid[:8]}"></span>
-</label>
-<span style="margin-left:8px;font-size:13px;color:#555;vertical-align:middle">Actual size</span>
-""")
-
-    toggle_row = widgets.HBox(
-        [_toggle_html, _size_cb],
-        layout=widgets.Layout(align_items="center"),
-    )
+    size_toggle = _ios_toggle(_size_cb.model_id, "Actual size", _pid, "size")
 
     # ── rendered output ───────────────────────────────────────────────────
     render_out = widgets.Output(
@@ -135,20 +300,17 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
 
     # ── section builder ───────────────────────────────────────────────────
     def _section(title: str, *children) -> widgets.VBox:
-        return widgets.VBox(
-            [widgets.HTML(f"<b style='font-size:0.88em;color:#333'>{title}</b>"),
-             *children],
-            layout=widgets.Layout(
-                padding="8px 10px",
-                border="1px solid #e0e0e0",
-                border_radius="6px",
-                overflow="hidden",
-            ),
+        vbox = widgets.VBox(
+            [widgets.HTML(f"<span class='mpl-t-{_pid}'>{title}</span>"), *children],
+            layout=widgets.Layout(padding="10px 12px", overflow="hidden"),
         )
+        vbox.add_class(f"mpl-c-{_pid}")
+        return vbox
 
     # ── helper: FloatText pair (min/max) ──────────────────────────────────
-    def _range_row(label: str, lo: float, hi: float,
-                   on_change) -> tuple[widgets.HBox, widgets.FloatText, widgets.FloatText]:
+    def _range_row(
+        label: str, lo: float, hi: float, on_change
+    ) -> tuple[widgets.HBox, widgets.FloatText, widgets.FloatText]:
         w_lo = widgets.FloatText(
             value=round(lo, 4), description=f"{label} min",
             style={"description_width": "50px"},
@@ -207,7 +369,6 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
         plot_type = S.detect_plot_type(fig)
         n_series = len(S.get_line_labels(fig))
 
-        # Type badge
         _type_label = {
             "categorical": f"categorical · {n_series} series",
             "continuous": "continuous (colormap)",
@@ -245,7 +406,7 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
                     value=color,
                     description=(label[:13] + "…" if len(label) > 13 else label),
                     style={"description_width": "82px"}, concise=False,
-                    layout=widgets.Layout(width="100%"),
+                    layout=widgets.Layout(width="90%"),
                 )
                 for color, label in zip(line_colors, line_labels)
             ]
@@ -316,7 +477,7 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
         if plot_type in ("continuous", "mixed"):
             if plot_type == "mixed":
                 cmap_box_children.append(
-                    widgets.HTML("<hr style='margin:4px 0;border-color:#e0e0e0'>")
+                    widgets.HTML("<hr style='margin:4px 0'>")
                 )
             cmap_type_tb = widgets.ToggleButtons(
                 options=["Sequential", "Diverging"], value="Sequential",
@@ -558,7 +719,7 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
 
         # ── bbox fine control ─────────────────────────────────────────────
         bbox_header = widgets.HTML(
-            "<span style='font-size:0.82em;color:#666'>BBox position (x, y)</span>"
+            "<span style='font-size:0.82em;color:#888'>BBox position (x, y)</span>"
         )
         bbox_x = widgets.FloatSlider(
             value=1.02, min=0.0, max=1.5, step=0.01,
@@ -671,22 +832,14 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
     if unknown:
         names_str = ", ".join(f"<code>{n}</code>" for n in sorted(unknown))
         avail_str = ", ".join(f"<code>{n}</code>" for n in sorted(_KNOWN_SECTIONS))
-        sections.append(widgets.HTML(f"""
-<div style="padding:8px 10px;border:1px solid #f5a623;border-radius:6px;
-            background:#fffbf0;font-size:1em;color:#7a5300;line-height:1.6">
-  <style>
-    .mplstudio-warn-{_mid[:8]} code {{
-      background:#f0d080;color:#3d2800;padding:1px 4px;
-      border-radius:3px;font-size:0.9em;
-    }}
-  </style>
-  <div class="mplstudio-warn-{_mid[:8]}">
-  <b>Unknown section(s):</b> {names_str}<br>
-  <b>Available:</b> {avail_str}<br>
-  <a href="{_GITHUB_ISSUES}/new" target="_blank" style="color:#1a73e8">Open a GitHub issue</a> to request a new section.
-  </div>
-</div>
-"""))
+        sections.append(widgets.HTML(
+            f'<div class="mpl-w-{_pid}">'
+            f"<b>Unknown section(s):</b> {names_str}<br>"
+            f"<b>Available:</b> {avail_str}<br>"
+            f'<a href="{_GITHUB_ISSUES}/new" target="_blank" style="color:#1a73e8">'
+            f"Open a GitHub issue</a> to request a new section."
+            f"</div>"
+        ))
 
     # ── layout ────────────────────────────────────────────────────────────
     grid = widgets.GridBox(
@@ -699,19 +852,37 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
         ),
     )
 
+    divider = widgets.HTML(
+        "<hr style='margin:6px 0;border:none;border-top:1px solid #e4e4eb'>"
+    )
+
+    logo = widgets.HTML(
+        "<span style='font-size:1.1em;font-weight:700;letter-spacing:-0.02em'>"
+        "mpl<span style='color:var(--mpl-accent,#6366f1)'>studio</span></span>"
+    )
+
+    toggle_row = widgets.HBox(
+        [dark_toggle, _dark_cb, size_toggle, _size_cb],
+        layout=widgets.Layout(align_items="center", gap="14px"),
+    )
+
     header = widgets.HBox(
-        [widgets.HTML("<b style='font-size:1.1em'>mplstudio</b>"), toggle_row],
+        [logo, toggle_row],
         layout=widgets.Layout(
             justify_content="space-between", align_items="center",
             width="100%", margin="0 0 6px 0",
         ),
     )
 
-    display(widgets.VBox(
-        [header, render_out, widgets.HTML("<hr style='margin:4px 0'>"), grid],
-        layout=widgets.Layout(width="100%", padding="10px", overflow="hidden"),
-    ))
+    panel = widgets.VBox(
+        [css_w, header, render_out, divider, grid],
+        layout=widgets.Layout(width="100%", padding="14px", overflow="hidden"),
+    )
+    panel.add_class(f"mpl-s-{_pid}")
+    display(panel)
 
+
+# ── palette/colormap display helpers ─────────────────────────────────────────
 
 def _swatches_div(colors: list[str]) -> str:
     """Return an HTML string of flex-wrapped color swatches."""
@@ -741,7 +912,7 @@ def _build_colormap_gradient(cmap_name: str, steps: int = 24) -> widgets.HTML:
     return widgets.HTML(
         value=(
             f"<div style='background:linear-gradient(to right,{stops});"
-            f"height:14px;border-radius:3px;margin-top:4px;"
+            f"height:14px;border-radius:6px;margin-top:4px;"
             f"border:1px solid #ccc'></div>"
         )
     )
