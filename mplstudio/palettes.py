@@ -250,3 +250,17 @@ def recommend(
 def palette_names() -> list[str]:
     """Return all palette names in registry order."""
     return [p["name"] for p in PALETTES]
+
+
+# ── continuous colormap lists ─────────────────────────────────────────────────
+# Curated subsets of matplotlib colormaps, grouped by type.
+
+SEQUENTIAL_CMAPS: list[str] = [
+    "viridis", "plasma", "inferno", "magma", "cividis",  # perceptually uniform
+    "Blues", "Oranges", "Reds", "Greens", "Purples",     # single-hue
+    "YlOrRd", "YlGnBu", "BuPu", "GnBu",                 # multi-hue
+]
+
+DIVERGING_CMAPS: list[str] = [
+    "coolwarm", "RdBu_r", "PiYG", "PRGn", "RdYlGn", "seismic",
+]

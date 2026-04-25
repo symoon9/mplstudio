@@ -10,6 +10,44 @@ from matplotlib.lines import Line2D
 from .palettes import get_palette
 
 
+# ── continuous artist helpers ─────────────────────────────────────────────────
+
+def _continuous_artists(fig: Figure):
+    """Yield artists that carry a scalar colormap (AxesImage, QuadMesh, etc.)."""
+    for ax in fig.axes:
+        for img in ax.get_images():
+            yield img
+        for coll in ax.collections:
+            lbl = getattr(coll, "get_label", lambda: "_")()
+            # Unlabeled collections with scalar data → continuous (pcolormesh, contourf…)
+            if lbl.startswith("_") and hasattr(coll, "get_array") and coll.get_array() is not None:
+                yield coll
+
+
+def detect_plot_type(fig: Figure) -> str:
+    """Return ``'categorical'``, ``'continuous'``, or ``'mixed'`` based on figure contents."""
+    has_categorical = bool(get_line_labels(fig))
+    has_continuous = any(True for _ in _continuous_artists(fig))
+    if has_categorical and has_continuous:
+        return "mixed"
+    if has_continuous:
+        return "continuous"
+    return "categorical"
+
+
+def set_colormap(fig: Figure, cmap_name: str) -> None:
+    """Apply *cmap_name* to all image and scalar-mapped collection artists."""
+    for artist in _continuous_artists(fig):
+        artist.set_cmap(cmap_name)
+
+
+def get_colormap(fig: Figure) -> str | None:
+    """Return the colormap name of the first continuous artist, or ``None``."""
+    for artist in _continuous_artists(fig):
+        return artist.get_cmap().name
+    return None
+
+
 # ── artist helpers ────────────────────────────────────────────────────────────
 
 def _labeled_artists(ax):

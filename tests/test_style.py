@@ -265,3 +265,81 @@ def test_set_legend_bbox(fig):
     S.set_legend_bbox(fig, 0.8, 0.9)
     legend = fig.axes[0].get_legend()
     assert legend is not None  # smoke test — bbox_to_anchor set without error
+
+
+# ── continuous colormap tests ─────────────────────────────────────────────────
+
+@pytest.fixture
+def heatmap_fig():
+    import numpy as np
+    f, ax = plt.subplots()
+    data = np.arange(16).reshape(4, 4)
+    ax.imshow(data, cmap="viridis")
+    yield f
+    plt.close(f)
+
+
+@pytest.fixture
+def pcolormesh_fig():
+    import numpy as np
+    f, ax = plt.subplots()
+    x = np.linspace(0, 1, 5)
+    y = np.linspace(0, 1, 5)
+    X, Y = np.meshgrid(x, y)
+    ax.pcolormesh(X, Y, X * Y, cmap="coolwarm")
+    yield f
+    plt.close(f)
+
+
+def test_detect_categorical(fig):
+    assert S.detect_plot_type(fig) == "categorical"
+
+
+def test_detect_continuous_imshow(heatmap_fig):
+    assert S.detect_plot_type(heatmap_fig) == "continuous"
+
+
+def test_detect_continuous_pcolormesh(pcolormesh_fig):
+    assert S.detect_plot_type(pcolormesh_fig) == "continuous"
+
+
+def test_detect_mixed():
+    import numpy as np
+    f, ax = plt.subplots()
+    ax.plot([1, 2, 3], label="series")
+    ax.legend()
+    ax.imshow(np.zeros((3, 3)), cmap="viridis", aspect="auto", extent=[0, 3, 0, 3])
+    assert S.detect_plot_type(f) == "mixed"
+    plt.close(f)
+
+
+def test_get_colormap_imshow(heatmap_fig):
+    cmap = S.get_colormap(heatmap_fig)
+    assert cmap == "viridis"
+
+
+def test_set_colormap_imshow(heatmap_fig):
+    S.set_colormap(heatmap_fig, "plasma")
+    assert S.get_colormap(heatmap_fig) == "plasma"
+
+
+def test_set_colormap_pcolormesh(pcolormesh_fig):
+    S.set_colormap(pcolormesh_fig, "inferno")
+    assert S.get_colormap(pcolormesh_fig) == "inferno"
+
+
+def test_get_colormap_returns_none_for_categorical(fig):
+    assert S.get_colormap(fig) is None
+
+
+def test_sequential_cmaps_list():
+    from mplstudio.palettes import SEQUENTIAL_CMAPS
+    assert "viridis" in SEQUENTIAL_CMAPS
+    assert "plasma" in SEQUENTIAL_CMAPS
+    assert len(SEQUENTIAL_CMAPS) >= 5
+
+
+def test_diverging_cmaps_list():
+    from mplstudio.palettes import DIVERGING_CMAPS
+    assert "coolwarm" in DIVERGING_CMAPS
+    assert len(DIVERGING_CMAPS) >= 3

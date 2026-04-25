@@ -11,7 +11,7 @@ from IPython.display import display
 from matplotlib.figure import Figure
 
 from . import style as S
-from .palettes import PALETTES, palette_names
+from .palettes import PALETTES, palette_names, SEQUENTIAL_CMAPS, DIVERGING_CMAPS
 
 _PREVIEW_HEIGHT = 400  # px — fixed height for the fitted preview mode
 
@@ -202,78 +202,140 @@ def studio(fig: Figure | None = None, *, show: list[str] | None = None) -> None:
 
     # ══ Colors ════════════════════════════════════════════════════════════
     if "colors" in active:
-        color_mode = widgets.ToggleButtons(
-            options=["Palette", "Manual"], value="Palette",
-            description="Mode:", style={"button_width": "72px"},
-            layout=widgets.Layout(width="100%", margin="0 0 4px 0"),
-        )
-        palette_select = widgets.Dropdown(
-            options=palette_names(), description="Palette",
-            style={"description_width": "58px"},
-            layout=widgets.Layout(width="100%"),
-        )
-        palette_preview = _build_palette_preview(palette_names()[0])
-        palette_row = widgets.HBox(
-            [palette_select, palette_preview],
-            layout=widgets.Layout(width="100%"),
+        plot_type = S.detect_plot_type(fig)
+        n_series = len(S.get_line_labels(fig))
+
+        # Type badge
+        _type_label = {
+            "categorical": f"categorical · {n_series} series",
+            "continuous": "continuous (colormap)",
+            "mixed": f"mixed · {n_series} categorical series + colormap",
+        }[plot_type]
+        type_badge = widgets.HTML(
+            f"<span style='font-size:0.78em;color:#888'>Detected: {_type_label}</span>"
         )
 
-        line_colors = S.get_line_colors(fig)
-        line_labels = S.get_line_labels(fig)
-        manual_pickers = [
-            widgets.ColorPicker(
-                value=color,
-                description=(label[:13] + "…" if len(label) > 13 else label),
-                style={"description_width": "82px"}, concise=False,
+        # ── Categorical controls ──────────────────────────────────────────
+        cat_box_children: list[widgets.Widget] = []
+
+        if plot_type in ("categorical", "mixed"):
+            color_mode = widgets.ToggleButtons(
+                options=["Palette", "Manual"], value="Palette",
+                description="Mode:", style={"button_width": "72px"},
+                layout=widgets.Layout(width="100%", margin="0 0 4px 0"),
+            )
+            palette_select = widgets.Dropdown(
+                options=palette_names(), description="Palette",
+                style={"description_width": "58px"},
                 layout=widgets.Layout(width="100%"),
             )
-            for color, label in zip(line_colors, line_labels)
-        ]
-        manual_section = widgets.VBox(
-            manual_pickers if manual_pickers
-            else [widgets.HTML("<i style='color:#888'>No labeled series found.</i>")]
-        )
-        manual_section.layout.display = "none"
+            palette_preview_w = _build_palette_preview(palette_names()[0])
+            palette_col = widgets.VBox(
+                [palette_select, palette_preview_w],
+                layout=widgets.Layout(width="100%"),
+            )
 
+            line_colors = S.get_line_colors(fig)
+            line_labels = S.get_line_labels(fig)
+            manual_pickers = [
+                widgets.ColorPicker(
+                    value=color,
+                    description=(label[:13] + "…" if len(label) > 13 else label),
+                    style={"description_width": "82px"}, concise=False,
+                    layout=widgets.Layout(width="100%"),
+                )
+                for color, label in zip(line_colors, line_labels)
+            ]
+            manual_section = widgets.VBox(
+                manual_pickers if manual_pickers
+                else [widgets.HTML("<i style='color:#888'>No labeled series found.</i>")]
+            )
+            manual_section.layout.display = "none"
+
+            def _apply_colors():
+                if color_mode.value == "Manual":
+                    S.set_line_colors_manual(fig, [p.value for p in manual_pickers])
+                else:
+                    S.set_line_colors(fig, palette_select.value)
+                _refresh()
+
+            def _on_palette_change(change):
+                palette_preview_w.value = _build_palette_preview(change["new"]).value
+                _apply_colors()
+
+            def _on_color_mode_change(change):
+                if change["new"] == "Manual":
+                    palette_col.layout.display = "none"
+                    manual_section.layout.display = ""
+                else:
+                    palette_col.layout.display = ""
+                    manual_section.layout.display = "none"
+                _apply_colors()
+
+            palette_select.observe(_on_palette_change, names="value")
+            color_mode.observe(_on_color_mode_change, names="value")
+            for picker in manual_pickers:
+                picker.observe(lambda _: _apply_colors(), names="value")
+
+            cat_box_children = [color_mode, palette_col, manual_section]
+
+        # ── Continuous / colormap controls ────────────────────────────────
+        cmap_box_children: list[widgets.Widget] = []
+
+        if plot_type in ("continuous", "mixed"):
+            if plot_type == "mixed":
+                cmap_box_children.append(
+                    widgets.HTML("<hr style='margin:4px 0;border-color:#e0e0e0'>")
+                )
+            cmap_type_tb = widgets.ToggleButtons(
+                options=["Sequential", "Diverging"], value="Sequential",
+                style={"button_width": "90px"},
+                layout=widgets.Layout(width="100%"),
+            )
+            _init_cmap = S.get_colormap(fig) or "viridis"
+            _init_type = "Sequential" if _init_cmap in SEQUENTIAL_CMAPS else "Diverging"
+            cmap_type_tb.value = _init_type
+
+            cmap_select = widgets.Dropdown(
+                options=SEQUENTIAL_CMAPS if _init_type == "Sequential" else DIVERGING_CMAPS,
+                value=_init_cmap if _init_cmap in (SEQUENTIAL_CMAPS + DIVERGING_CMAPS) else SEQUENTIAL_CMAPS[0],
+                description="Colormap",
+                style={"description_width": "68px"},
+                layout=widgets.Layout(width="100%"),
+            )
+            cmap_grad_w = _build_colormap_gradient(cmap_select.value)
+
+            def _on_cmap_type(change):
+                opts = SEQUENTIAL_CMAPS if change["new"] == "Sequential" else DIVERGING_CMAPS
+                cmap_select.options = opts
+                cmap_select.value = opts[0]
+
+            def _on_cmap(change):
+                cmap_grad_w.value = _build_colormap_gradient(change["new"]).value
+                S.set_colormap(fig, change["new"])
+                _refresh()
+
+            cmap_type_tb.observe(_on_cmap_type, names="value")
+            cmap_select.observe(_on_cmap, names="value")
+            cmap_box_children += [cmap_type_tb, cmap_select, cmap_grad_w]
+
+        # ── Background ────────────────────────────────────────────────────
         bg_color = widgets.ColorPicker(
             value="#ffffff", description="Background",
             style={"description_width": "82px"}, concise=False,
             layout=widgets.Layout(width="100%"),
         )
 
-        def _apply_colors():
-            if color_mode.value == "Manual":
-                S.set_line_colors_manual(fig, [p.value for p in manual_pickers])
-            else:
-                S.set_line_colors(fig, palette_select.value)
-            _refresh()
-
-        def _on_palette_change(change):
-            palette_row.children = (palette_select, _build_palette_preview(change["new"]))
-            _apply_colors()
-
-        def _on_color_mode_change(change):
-            if change["new"] == "Manual":
-                palette_row.layout.display = "none"
-                manual_section.layout.display = ""
-            else:
-                palette_row.layout.display = ""
-                manual_section.layout.display = "none"
-            _apply_colors()
-
         def _on_bg_change(change):
             if len(change["new"]) == 7:
                 S.set_background_color(fig, change["new"])
                 _refresh()
 
-        palette_select.observe(_on_palette_change, names="value")
-        color_mode.observe(_on_color_mode_change, names="value")
         bg_color.observe(_on_bg_change, names="value")
-        for picker in manual_pickers:
-            picker.observe(lambda _: _apply_colors(), names="value")
 
         sections.append(_section(
-            "Colors", color_mode, palette_row, manual_section, bg_color,
+            "Colors", type_badge,
+            *cat_box_children, *cmap_box_children, bg_color,
         ))
 
     # ══ Opacity (Alpha) ═══════════════════════════════════════════════════
@@ -625,9 +687,28 @@ def _build_palette_preview(name: str) -> widgets.HTML:
     colors = get_palette(name)
     swatches = "".join(
         f"<span style='background:{c};display:inline-block;width:16px;height:16px;"
-        f"margin:1px;border-radius:2px;border:1px solid #ccc'></span>"
+        f"margin:2px 2px 0 0;border-radius:3px;border:1px solid #ccc'></span>"
         for c in colors
     )
     return widgets.HTML(
-        value=f"<div style='margin-left:6px;line-height:18px'>{swatches}</div>"
+        value=f"<div style='display:flex;flex-wrap:wrap;margin-top:4px'>{swatches}</div>"
+    )
+
+
+def _build_colormap_gradient(cmap_name: str, steps: int = 24) -> widgets.HTML:
+    import matplotlib.cm as cm
+    import matplotlib.colors as mcolors
+    try:
+        cmap = cm.get_cmap(cmap_name)
+    except ValueError:
+        return widgets.HTML(value="")
+    stops = ", ".join(
+        mcolors.to_hex(cmap(i / (steps - 1))) for i in range(steps)
+    )
+    return widgets.HTML(
+        value=(
+            f"<div style='background:linear-gradient(to right,{stops});"
+            f"height:14px;border-radius:3px;margin-top:4px;"
+            f"border:1px solid #ccc'></div>"
+        )
     )
