@@ -98,7 +98,7 @@ def _theme_css(pid: str, dark: bool) -> str:
   position:absolute;right:8px;top:50%;
   transform:translateY(-50%);
   color:{muted};pointer-events:none;
-  font-size:11px;line-height:1;
+  font-size:16px;line-height:1;
 }}
 /* toggle buttons group */
 .mpl-s-{pid} .widget-toggle-buttons .widget-toggle-button {{

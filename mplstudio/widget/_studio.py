@@ -24,6 +24,7 @@ from ._sections import (
     legend as _sec_legend,
     grid_spines as _sec_grid_spines,
     palette_suggestions as _sec_palette_suggestions,
+    save_figure as _sec_save_figure,
 )
 
 # Ordered list of (section_name, builder_module) pairs
@@ -36,6 +37,7 @@ _SECTION_BUILDERS = [
     ("legend",              _sec_legend),
     ("grid_spines",         _sec_grid_spines),
     ("palette_suggestions", _sec_palette_suggestions),
+    ("save_figure",         _sec_save_figure),
 ]
 
 
@@ -78,15 +80,10 @@ def studio(
 
     css_w = widgets.HTML(value=_theme_css(_pid, dark))
 
-    # ── Copy / Save buttons (ipywidgets.Button — works in all environments)
+    # ── Copy button (ipywidgets.Button — works in all environments)
     # HTML onclick is stripped by VSCode's sanitizer; Python callbacks are not.
     copy_btn = widgets.Button(
         description="Copy",
-        button_style="info",
-        layout=widgets.Layout(width="auto"),
-    )
-    save_btn = widgets.Button(
-        description="Save",
         button_style="info",
         layout=widgets.Layout(width="auto"),
     )
@@ -117,17 +114,7 @@ def studio(
         copy_btn.description = "✓ Copied"
         threading.Timer(1.5, lambda: setattr(copy_btn, "description", "Copy")).start()
 
-    def _on_save(_):
-        png = _fig_png()
-        with open("figure.png", "wb") as f:
-            f.write(png)
-        save_btn.description = "✓ Saved as figure.png"
-        threading.Timer(
-            2.0, lambda: setattr(save_btn, "description", "Save")
-        ).start()
-
     copy_btn.on_click(_on_copy)
-    save_btn.on_click(_on_save)
 
     # ── render output ─────────────────────────────────────────────────────
     render_out = widgets.Output(layout=widgets.Layout(width="100%", margin="0 0 4px 0"))
@@ -181,14 +168,11 @@ def studio(
             grid_gap="8px", width="100%", overflow="hidden"))
 
     logo = widgets.HTML(
-        "<span style='font-size:1.1em;font-weight:700;letter-spacing:-0.02em'>"
+        "<span style='font-size:20px;font-weight:700;letter-spacing:-0.02em'>"
         "mpl<span style='color:var(--mpl-accent,#6366f1)'>studio</span></span>")
 
     header = widgets.HBox(
-        [logo, widgets.HBox(
-            [copy_btn, save_btn],
-            layout=widgets.Layout(align_items="center", gap="6px"),
-        )],
+        [logo, copy_btn],
         layout=widgets.Layout(
             justify_content="space-between", align_items="center",
             width="100%", margin="0 0 6px 0",

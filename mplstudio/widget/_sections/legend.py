@@ -5,11 +5,28 @@ from __future__ import annotations
 import ipywidgets as widgets
 
 from .._ctx import _PanelCtx
-from .._helpers import _section
+from .._helpers import _section, _per_btn
 from ... import style as S
 
 
 def build(ctx: _PanelCtx) -> widgets.VBox:
+    # ── Legend title ──────────────────────────────────────────────────────
+    leg0 = ctx.fig.axes[0].get_legend() if ctx.fig.axes else None
+    init_title = leg0.get_title().get_text() if leg0 else ""
+
+    title_input = widgets.Text(
+        value=init_title, description="Title",
+        placeholder="Legend title",
+        style={"description_width": "46px"},
+        layout=widgets.Layout(width="100%"), continuous_update=False)
+
+    def _on_title(_):
+        S.set_legend_title(ctx.fig, title_input.value)
+        ctx.refresh()
+
+    title_input.observe(_on_title, names="value")
+
+    # ── Location dropdown ─────────────────────────────────────────────────
     legend_loc = widgets.Dropdown(
         options=S.LEGEND_LOCATIONS, value="best",
         description="Location", style={"description_width": "68px"},
@@ -21,7 +38,26 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
 
     legend_loc.observe(_on_legend_loc, names="value")
 
-    leg0 = ctx.fig.axes[0].get_legend() if ctx.fig.axes else None
+    # ── BBox position ─────────────────────────────────────────────────────
+    bbox_header = widgets.HTML(
+        "<span style='font-size:0.82em;color:#888'>BBox position (x, y)</span>")
+    bbox_x = widgets.FloatSlider(value=1.02, min=0.0, max=1.5, step=0.01,
+                                 description="x", readout=False,
+                                 style={"description_width": "20px"},
+                                 layout=widgets.Layout(width="100%"), continuous_update=False)
+    bbox_y = widgets.FloatSlider(value=1.0, min=0.0, max=1.5, step=0.01,
+                                 description="y", readout=False,
+                                 style={"description_width": "20px"},
+                                 layout=widgets.Layout(width="100%"), continuous_update=False)
+
+    def _on_bbox(_):
+        S.set_legend_bbox(ctx.fig, bbox_x.value, bbox_y.value)
+        ctx.refresh()
+
+    bbox_x.observe(_on_bbox, names="value")
+    bbox_y.observe(_on_bbox, names="value")
+
+    # ── Collapsible series labels ─────────────────────────────────────────
     leg_texts = [t.get_text() for t in leg0.get_texts()] if leg0 else []
     name_inputs = [
         widgets.Text(value=txt,
@@ -38,25 +74,19 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
     for inp in name_inputs:
         inp.observe(_on_legend_name, names="value")
 
-    bbox_header = widgets.HTML(
-        "<span style='font-size:0.82em;color:#888'>BBox position (x, y)</span>")
-    bbox_x = widgets.FloatSlider(value=1.02, min=0.0, max=1.5, step=0.01,
-                                 description="x", style={"description_width": "20px"},
-                                 layout=widgets.Layout(width="100%"), continuous_update=False)
-    bbox_y = widgets.FloatSlider(value=1.0, min=0.0, max=1.5, step=0.01,
-                                 description="y", style={"description_width": "20px"},
-                                 layout=widgets.Layout(width="100%"), continuous_update=False)
+    if name_inputs:
+        labels_btn, labels_box, _ = _per_btn("Series labels", ctx.pid)
+        labels_box.children = tuple(name_inputs)
+        labels_section = [labels_btn, labels_box]
+    else:
+        labels_section = [
+            widgets.HTML("<i style='color:#888;font-size:0.85em'>No entries.</i>")]
 
-    def _on_bbox(_):
-        S.set_legend_bbox(ctx.fig, bbox_x.value, bbox_y.value)
-        ctx.refresh()
-
-    bbox_x.observe(_on_bbox, names="value")
-    bbox_y.observe(_on_bbox, names="value")
-
-    legend_children = (
-        [legend_loc]
-        + (name_inputs or [widgets.HTML("<i style='color:#888;font-size:0.85em'>No entries.</i>")])
-        + [bbox_header, bbox_x, bbox_y]
-    )
-    return _section("Legend", ctx.pid, *legend_children)
+    # ── Layout: title → location → bbox → labels toggle ──────────────────
+    children = [
+        title_input,
+        legend_loc,
+        bbox_header, bbox_x, bbox_y,
+        *labels_section,
+    ]
+    return _section("Legend", ctx.pid, *children)

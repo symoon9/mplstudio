@@ -29,8 +29,9 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
 
     def _fsl(desc, init, dw="78px"):
         return widgets.IntSlider(value=init, min=6, max=40, step=1,
-                                 description=desc, style={"description_width": dw},
-                                 layout=widgets.Layout(width="100%"),
+                                 description=desc, readout=False,
+                                 style={"description_width": dw},
+                                 layout=widgets.Layout(width="95%"),
                                  continuous_update=False)
 
     font_all    = _fsl("All",     _i_all,    "82px")

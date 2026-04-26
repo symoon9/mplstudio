@@ -24,6 +24,7 @@ from ._legend import (
     set_legend_position,
     set_legend_labels,
     set_legend_bbox,
+    set_legend_title,
     LEGEND_LOCATIONS,
 )
 from ._grid_spines import set_grid, set_spine_style, SPINE_STYLES
@@ -43,7 +44,7 @@ __all__ = [
     "set_title", "set_xlabel", "set_ylabel", "set_xlim", "set_ylim",
     # legend
     "set_legend_position", "set_legend_labels", "set_legend_bbox",
-    "LEGEND_LOCATIONS",
+    "set_legend_title", "LEGEND_LOCATIONS",
     # grid & spines
     "set_grid", "set_spine_style", "SPINE_STYLES",
 ]

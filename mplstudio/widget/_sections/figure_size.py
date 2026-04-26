@@ -13,11 +13,11 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
     w_init, h_init = ctx.fig.get_size_inches()
     fig_width = widgets.FloatSlider(
         value=w_init, min=2, max=25, step=0.5, description="Width (in)",
-        style={"description_width": "82px"},
+        readout=False, style={"description_width": "82px"},
         layout=widgets.Layout(width="100%"), continuous_update=False)
     fig_height = widgets.FloatSlider(
         value=h_init, min=2, max=25, step=0.5, description="Height (in)",
-        style={"description_width": "82px"},
+        readout=False, style={"description_width": "82px"},
         layout=widgets.Layout(width="100%"), continuous_update=False)
 
     def _on_size(_):

@@ -16,15 +16,16 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
 
     global_alpha = widgets.FloatSlider(
         value=init_global, min=0.0, max=1.0, step=0.05,
-        description="All series", style={"description_width": "82px"},
+        description="All series", readout=False,
+        style={"description_width": "82px"},
         layout=widgets.Layout(width="100%"), continuous_update=False)
 
     alpha_sliders = [
         widgets.FloatSlider(
             value=a, min=0.0, max=1.0, step=0.05,
             description=(lbl[:13] + "…" if len(lbl) > 13 else lbl),
-            style={"description_width": "82px"},
-            layout=widgets.Layout(width="100%"), continuous_update=False)
+            readout=False, style={"description_width": "82px"},
+            layout=widgets.Layout(width="95%"), continuous_update=False)
         for a, lbl in zip(alphas, a_labels)
     ]
 
