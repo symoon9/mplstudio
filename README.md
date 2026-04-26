@@ -5,11 +5,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/symoon9/mplstudio/actions/workflows/ci.yml/badge.svg)](https://github.com/symoon9/mplstudio/actions/workflows/ci.yml)
 
-An interactive GUI for styling matplotlib figures — directly in Jupyter.
+An **interactive GUI** for **styling matplotlib figures** directly in Jupyter.
 
-Adjust colors, fonts, axes, legends, and more in real time without touching your plot code.
+Adjust colors, fonts, axes, legends, and more in real time **without touching your plot code.**
 
----
+
 
 ## Installation
 
@@ -17,9 +17,9 @@ Adjust colors, fonts, axes, legends, and more in real time without touching your
 pip install mplstudio
 ```
 
-Requires Python 3.9+, Jupyter Notebook or JupyterLab, and matplotlib ≥ 3.5.
+Requires `Python 3.9+`, Jupyter Notebook or JupyterLab, and `matplotlib ≥ 3.5`.
 
----
+
 
 ## Quick Start
 
@@ -37,7 +37,7 @@ mplstudio.studio(fig)
 
 This displays an interactive control panel below your figure with live preview.
 
----
+
 
 ## API Reference
 
@@ -69,9 +69,10 @@ mplstudio.available_sections()
 #  'legend', 'palette_suggestions', 'typography']
 ```
 
----
 
-## Sections
+
+
+## Available Sections
 
 | Section | Controls |
 |---------|----------|
@@ -84,7 +85,8 @@ mplstudio.available_sections()
 | `grid_spines` | Grid on/off, spine style (box / left-bottom / none) |
 | `palette_suggestions` | Colorblind-safe palette recommendations filtered by use case and background |
 
----
+
+
 
 ## Palette Utilities
 
@@ -116,6 +118,9 @@ for p in suggestions:
 ```
 
 ### Available Palettes
+Palettes for categorical, and continuous variables (sequential and diverging color maps). 
+
+Following table shows palettes for **categorical** values. For **continuous** variables, mplstudio uses matplotlib's built-in colormaps. See the [matplotlib colormap reference](https://matplotlib.org/stable/gallery/color/colormap_reference.html) for the full list.
 
 | Palette | Colors | Tags |
 |---------|--------|------|
@@ -137,7 +142,7 @@ for p in suggestions:
 | Pastel | 6 | light background |
 | High Contrast | 5 | light background |
 
----
+
 
 ## Requirements
 
@@ -147,7 +152,7 @@ for p in suggestions:
 - ipykernel ≥ 6.0
 - Jupyter Notebook or JupyterLab
 
----
+
 
 ## License
 
