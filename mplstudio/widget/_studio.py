@@ -89,6 +89,34 @@ def studio(
         f"font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"
         f"margin-left:4px;"
     )
+    # Container class scoped by pid so closest()/querySelector() never
+    # crosses into a different studio panel on the same page.
+    _cid = f"mpl-prev-{_pid}"
+
+    # Single-quoted onclick — double-quotes freely usable inside JS.
+    # Uses closest()/querySelector() to read img.src from within the same
+    # container: data URL is stored once in the <img> src, never duplicated
+    # in the onclick attribute (embedding a 100KB+ base64 string in an
+    # attribute causes HTML parsers to drop the element entirely).
+    _copy_js = (
+        f'var c=this.closest(".{_cid}");'
+        f'var btn=this;'
+        f'fetch(c.querySelector("img").src).then(r=>r.blob())'
+        f'.then(b=>navigator.clipboard.write([new ClipboardItem({{"image/png":b}})]))'
+        f'.then(()=>{{btn.textContent="✓ Copied";setTimeout(()=>btn.textContent="Copy",1500)}})'
+        f'.catch(()=>{{btn.textContent="⚠ Not supported";setTimeout(()=>btn.textContent="Copy",2000)}})'
+    )
+    _save_js = (
+        f'var a=document.createElement("a");'
+        f'a.href=this.closest(".{_cid}").querySelector("img").src;'
+        f'a.download="figure.png";a.click()'
+    )
+    _toolbar = (
+        f'<div style="text-align:right;margin-bottom:3px">'
+        f'<button style="{_btn_style}" onclick=\'{_copy_js}\'>Copy</button>'
+        f'<button style="{_btn_style}" onclick=\'{_save_js}\'>Save</button>'
+        f'</div>'
+    )
 
     def _refresh(*_):
         buf = io.BytesIO()
@@ -105,31 +133,13 @@ def studio(
             is_ = (f"max-height:{_PREVIEW_HEIGHT}px;width:auto;"
                    "max-width:100%;display:inline-block;vertical-align:top")
 
-        # Buttons and image share the same HTML widget so they are always
-        # in the same DOM context — works in Jupyter, JupyterLab, and VSCode.
-        # The data URL is embedded directly in the JS so no getElementById is needed.
-        # Single-quoted onclick so double-quotes work freely inside the JS.
-        copy_js = (
-            f'var btn=this;'
-            f'fetch("{data_url}").then(r=>r.blob())'
-            f'.then(b=>navigator.clipboard.write([new ClipboardItem({{"image/png":b}})]))'
-            f'.then(()=>{{btn.textContent="✓ Copied";setTimeout(()=>btn.textContent="Copy",1500)}})'
-            f'.catch(()=>{{btn.textContent="⚠ Not supported";setTimeout(()=>btn.textContent="Copy",2000)}})'
-        )
-        save_js = (
-            f'var a=document.createElement("a");'
-            f'a.href="{data_url}";a.download="figure.png";a.click()'
-        )
-        toolbar = (
-            f'<div style="text-align:right;margin-bottom:3px">'
-            f'<button style="{_btn_style}" onclick=\'{copy_js}\'>Copy</button>'
-            f'<button style="{_btn_style}" onclick=\'{save_js}\'>Save</button>'
-            f'</div>'
-        )
         with render_out:
             render_out.clear_output(wait=True)
             display(widgets.HTML(
-                toolbar + f'<div style="{ds}"><img src="{data_url}" style="{is_}"></div>'
+                f'<div class="{_cid}">'
+                + _toolbar
+                + f'<div style="{ds}"><img src="{data_url}" style="{is_}"></div>'
+                + '</div>'
             ))
 
     _size_cb.observe(lambda _: _refresh(), names="value")

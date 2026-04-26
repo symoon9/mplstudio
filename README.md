@@ -1,4 +1,6 @@
-# mplstudio
+<div align="center">
+  <img src="docs/mplstudio_logo_square.png" alt="mplstudio" width="50%">
+</div>
 
 [![PyPI version](https://img.shields.io/pypi/v/mplstudio)](https://pypi.org/project/mplstudio/)
 [![Python](https://img.shields.io/pypi/pyversions/mplstudio)](https://pypi.org/project/mplstudio/)
