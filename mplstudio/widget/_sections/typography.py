@@ -5,7 +5,7 @@ from __future__ import annotations
 import ipywidgets as widgets
 
 from .._ctx import _PanelCtx
-from .._helpers import _section, _per_btn
+from .._helpers import _section, _per_btn, _mk_slider
 from ... import style as S
 
 
@@ -28,11 +28,9 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
                     if _ax0 and _ax0.get_legend() else _i_all)
 
     def _fsl(desc, init, dw="78px"):
-        return widgets.IntSlider(value=init, min=6, max=40, step=1,
-                                 description=desc, readout=False,
-                                 style={"description_width": dw},
-                                 layout=widgets.Layout(width="95%"),
-                                 continuous_update=False)
+        return _mk_slider(widgets.IntSlider, desc, dw,
+                          value=init, min=6, max=40, step=1,
+                          layout=widgets.Layout(width="95%"))
 
     font_all    = _fsl("All",     _i_all,    "82px")
     font_title  = _fsl("Title",   _i_title)

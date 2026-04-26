@@ -37,6 +37,21 @@ def _per_btn(label: str, pid: str) -> tuple[widgets.Button, widgets.VBox, list]:
     return btn, box, flag
 
 
+def _mk_slider(cls, description: str, dw: str = "82px", **kw) -> widgets.Widget:
+    """Return a themed Int/FloatSlider with consistent style.
+
+    Args:
+        cls: widgets.IntSlider or widgets.FloatSlider
+        description: label text
+        dw: description_width (CSS string)
+        **kw: forwarded to the slider constructor
+    """
+    kw.setdefault("layout", widgets.Layout(width="100%"))
+    kw.setdefault("continuous_update", False)
+    kw.setdefault("readout", True)
+    return cls(description=description, style={"description_width": dw}, **kw)
+
+
 def _lim_sliders(lo_init: float, hi_init: float):
     """Return (lo_sl, hi_sl) FloatSlider pair for xlim/ylim blocks.
 

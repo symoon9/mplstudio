@@ -5,7 +5,7 @@ from __future__ import annotations
 import ipywidgets as widgets
 
 from .._ctx import _PanelCtx
-from .._helpers import _section, _per_btn
+from .._helpers import _section, _per_btn, _mk_slider
 from ... import style as S
 
 
@@ -14,18 +14,14 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
     a_labels = S.get_line_labels(ctx.fig)
     init_global = (sum(alphas) / len(alphas)) if alphas else 1.0
 
-    global_alpha = widgets.FloatSlider(
-        value=init_global, min=0.0, max=1.0, step=0.05,
-        description="All series", readout=False,
-        style={"description_width": "82px"},
-        layout=widgets.Layout(width="100%"), continuous_update=False)
+    global_alpha = _mk_slider(widgets.FloatSlider, "All series", "82px",
+                              value=init_global, min=0.0, max=1.0, step=0.05)
 
     alpha_sliders = [
-        widgets.FloatSlider(
-            value=a, min=0.0, max=1.0, step=0.05,
-            description=(lbl[:13] + "…" if len(lbl) > 13 else lbl),
-            readout=False, style={"description_width": "82px"},
-            layout=widgets.Layout(width="95%"), continuous_update=False)
+        _mk_slider(widgets.FloatSlider,
+                   (lbl[:13] + "…" if len(lbl) > 13 else lbl), "82px",
+                   value=a, min=0.0, max=1.0, step=0.05,
+                   layout=widgets.Layout(width="95%"))
         for a, lbl in zip(alphas, a_labels)
     ]
 

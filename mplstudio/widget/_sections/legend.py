@@ -5,7 +5,7 @@ from __future__ import annotations
 import ipywidgets as widgets
 
 from .._ctx import _PanelCtx
-from .._helpers import _section, _per_btn
+from .._helpers import _section, _per_btn, _mk_slider
 from ... import style as S
 
 
@@ -41,14 +41,10 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
     # ── BBox position ─────────────────────────────────────────────────────
     bbox_header = widgets.HTML(
         "<span style='font-size:0.82em;color:#888'>BBox position (x, y)</span>")
-    bbox_x = widgets.FloatSlider(value=1.02, min=0.0, max=1.5, step=0.01,
-                                 description="x", readout=False,
-                                 style={"description_width": "20px"},
-                                 layout=widgets.Layout(width="100%"), continuous_update=False)
-    bbox_y = widgets.FloatSlider(value=1.0, min=0.0, max=1.5, step=0.01,
-                                 description="y", readout=False,
-                                 style={"description_width": "20px"},
-                                 layout=widgets.Layout(width="100%"), continuous_update=False)
+    bbox_x = _mk_slider(widgets.FloatSlider, "x", "20px",
+                        value=1.02, min=0.0, max=1.5, step=0.01)
+    bbox_y = _mk_slider(widgets.FloatSlider, "y", "20px",
+                        value=1.0, min=0.0, max=1.5, step=0.01)
 
     def _on_bbox(_):
         S.set_legend_bbox(ctx.fig, bbox_x.value, bbox_y.value)

@@ -24,20 +24,20 @@ from ._sections import (
     legend as _sec_legend,
     grid_spines as _sec_grid_spines,
     palette_suggestions as _sec_palette_suggestions,
-    save_figure as _sec_save_figure,
+    save as _sec_save,
 )
 
 # Ordered list of (section_name, builder_module) pairs
 _SECTION_BUILDERS = [
+    ("save",                _sec_save),
     ("figure_size",         _sec_figure_size),
     ("typography",          _sec_typography),
+    ("legend",              _sec_legend),
     ("colors",              _sec_colors),
     ("alpha",               _sec_opacity),
     ("axes",                _sec_axes),
-    ("legend",              _sec_legend),
     ("grid_spines",         _sec_grid_spines),
     ("palette_suggestions", _sec_palette_suggestions),
-    ("save_figure",         _sec_save_figure),
 ]
 
 

@@ -46,16 +46,21 @@ def _theme_css(pid: str, dark: bool) -> str:
   width:14px;height:14px;top:-4px;cursor:pointer;
   box-shadow:0 1px 4px rgba(0,0,0,.25);
 }}
-/* slider readout — styled like a text input so it's obviously editable */
+/* slider readout — compact editable input */
 .mpl-s-{pid} .widget-readout {{
   background:{inp_bg} !important;
   border:1.5px solid {border} !important;
   border-radius:6px !important;
   color:{text} !important;
   padding:1px 5px !important;
-  min-width:58px !important;
+  min-width:44px !important;
+  max-width:52px !important;
+  width:52px !important;
+  height:22px !important;
+  line-height:20px !important;
+  box-sizing:border-box !important;
   box-shadow:inset 0 1px 2px rgba(0,0,0,.07) !important;
-  font-size:0.85em !important;
+  font-size:0.82em !important;
 }}
 /* text / number inputs */
 .mpl-s-{pid} input[type=text],
