@@ -4,14 +4,16 @@ from __future__ import annotations
 
 import base64
 import io
+import threading
 
 import ipywidgets as widgets
 import matplotlib.pyplot as plt
+from IPython.display import Javascript
 from IPython.display import display
 from matplotlib.figure import Figure
 
 from ._constants import _PREVIEW_HEIGHT, _KNOWN_SECTIONS, _GITHUB_ISSUES
-from ._theme import _theme_css, _ios_toggle
+from ._theme import _theme_css
 from ._ctx import _PanelCtx
 from ._sections import (
     figure_size as _sec_figure_size,
@@ -69,80 +71,81 @@ def studio(
         unknown = show_set - _KNOWN_SECTIONS
         active = show_set & _KNOWN_SECTIONS
 
-    # ── actual-size toggle → provides _pid ───────────────────────────────
-    _size_cb = widgets.Checkbox(value=False, indent=False, description="")
-    _size_cb.layout.display = "none"
-    _pid = _size_cb.model_id[:8]
+    # ── pid (unique per panel) ────────────────────────────────────────────
+    # Use a hidden Label as the pid source — model_id is unique per widget.
+    _anchor = widgets.Label("", layout=widgets.Layout(display="none"))
+    _pid = _anchor.model_id[:8]
 
     css_w = widgets.HTML(value=_theme_css(_pid, dark))
-    size_toggle = _ios_toggle(_size_cb.model_id, "Actual size", _pid, "size")
+
+    # ── Copy / Save buttons (ipywidgets.Button — works in all environments)
+    # HTML onclick is stripped by VSCode's sanitizer; Python callbacks are not.
+    copy_btn = widgets.Button(
+        description="Copy",
+        button_style="info",
+        layout=widgets.Layout(width="auto"),
+    )
+    save_btn = widgets.Button(
+        description="Save",
+        button_style="info",
+        layout=widgets.Layout(width="auto"),
+    )
+
+    # Hidden Output used to execute clipboard JS without polluting the preview.
+    _js_out = widgets.Output(layout=widgets.Layout(display="none"))
+
+    def _fig_png() -> bytes:
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png", bbox_inches="tight", dpi=fig.dpi)
+        buf.seek(0)
+        return buf.read()
+
+    def _on_copy(_):
+        png = _fig_png()
+        img_b64 = base64.b64encode(png).decode()
+        # Try clipboard via JS. Works in Jupyter / JupyterLab (Chrome-based).
+        # May not work in VSCode webview due to clipboard-write permission policy.
+        js = (
+            'fetch("data:image/png;base64,' + img_b64 + '")'
+            ".then(r=>r.blob())"
+            '.then(b=>navigator.clipboard.write([new ClipboardItem({"image/png":b})]))'
+            ".catch(e=>console.warn('clipboard write failed:',e));"
+        )
+        with _js_out:
+            _js_out.clear_output()
+            display(Javascript(js))
+        copy_btn.description = "✓ Copied"
+        threading.Timer(1.5, lambda: setattr(copy_btn, "description", "Copy")).start()
+
+    def _on_save(_):
+        png = _fig_png()
+        with open("figure.png", "wb") as f:
+            f.write(png)
+        save_btn.description = "✓ Saved as figure.png"
+        threading.Timer(
+            2.0, lambda: setattr(save_btn, "description", "Save")
+        ).start()
+
+    copy_btn.on_click(_on_copy)
+    save_btn.on_click(_on_save)
 
     # ── render output ─────────────────────────────────────────────────────
     render_out = widgets.Output(layout=widgets.Layout(width="100%", margin="0 0 4px 0"))
 
-    # Accent color for toolbar buttons — matches the active theme.
-    _accent = "#89b4fa" if dark else "#6366f1"
-    _btn_style = (
-        f"cursor:pointer;background:transparent;"
-        f"border:1.5px solid {_accent};color:{_accent};"
-        f"border-radius:6px;padding:2px 9px;font-size:0.78em;"
-        f"font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"
-        f"margin-left:4px;"
-    )
-    # Container class scoped by pid so closest()/querySelector() never
-    # crosses into a different studio panel on the same page.
-    _cid = f"mpl-prev-{_pid}"
-
-    # Single-quoted onclick — double-quotes freely usable inside JS.
-    # Uses closest()/querySelector() to read img.src from within the same
-    # container: data URL is stored once in the <img> src, never duplicated
-    # in the onclick attribute (embedding a 100KB+ base64 string in an
-    # attribute causes HTML parsers to drop the element entirely).
-    _copy_js = (
-        f'var c=this.closest(".{_cid}");'
-        f'var btn=this;'
-        f'fetch(c.querySelector("img").src).then(r=>r.blob())'
-        f'.then(b=>navigator.clipboard.write([new ClipboardItem({{"image/png":b}})]))'
-        f'.then(()=>{{btn.textContent="✓ Copied";setTimeout(()=>btn.textContent="Copy",1500)}})'
-        f'.catch(()=>{{btn.textContent="⚠ Not supported";setTimeout(()=>btn.textContent="Copy",2000)}})'
-    )
-    _save_js = (
-        f'var a=document.createElement("a");'
-        f'a.href=this.closest(".{_cid}").querySelector("img").src;'
-        f'a.download="figure.png";a.click()'
-    )
-    _toolbar = (
-        f'<div style="text-align:right;margin-bottom:3px">'
-        f'<button style="{_btn_style}" onclick=\'{_copy_js}\'>Copy</button>'
-        f'<button style="{_btn_style}" onclick=\'{_save_js}\'>Save</button>'
-        f'</div>'
-    )
-
     def _refresh(*_):
-        buf = io.BytesIO()
-        fig.savefig(buf, format="png", bbox_inches="tight", dpi=fig.dpi)
-        buf.seek(0)
-        img_b64 = base64.b64encode(buf.read()).decode()
-        data_url = f"data:image/png;base64,{img_b64}"
-
-        if _size_cb.value:
-            ds = "text-align:center;overflow-x:auto;width:100%"
-            is_ = "height:auto;display:inline-block;vertical-align:top"
-        else:
-            ds = "text-align:center;width:100%"
-            is_ = (f"max-height:{_PREVIEW_HEIGHT}px;width:auto;"
-                   "max-width:100%;display:inline-block;vertical-align:top")
-
+        png = _fig_png()
+        data_url = "data:image/png;base64," + base64.b64encode(png).decode()
+        is_ = (
+            f"max-height:{_PREVIEW_HEIGHT}px;width:auto;"
+            "max-width:100%;display:inline-block;vertical-align:top"
+        )
         with render_out:
             render_out.clear_output(wait=True)
             display(widgets.HTML(
-                f'<div class="{_cid}">'
-                + _toolbar
-                + f'<div style="{ds}"><img src="{data_url}" style="{is_}"></div>'
-                + '</div>'
+                f'<div style="text-align:center;width:100%">'
+                f'<img src="{data_url}" style="{is_}"></div>'
             ))
 
-    _size_cb.observe(lambda _: _refresh(), names="value")
     _refresh()
 
     # ── build shared context ──────────────────────────────────────────────
@@ -182,16 +185,21 @@ def studio(
         "mpl<span style='color:var(--mpl-accent,#6366f1)'>studio</span></span>")
 
     header = widgets.HBox(
-        [logo, widgets.HBox([size_toggle, _size_cb],
-                            layout=widgets.Layout(align_items="center"))],
-        layout=widgets.Layout(justify_content="space-between", align_items="center",
-                              width="100%", margin="0 0 6px 0"))
+        [logo, widgets.HBox(
+            [copy_btn, save_btn],
+            layout=widgets.Layout(align_items="center", gap="6px"),
+        )],
+        layout=widgets.Layout(
+            justify_content="space-between", align_items="center",
+            width="100%", margin="0 0 6px 0",
+        ),
+    )
 
     divider = widgets.HTML(
         "<hr style='margin:6px 0;border:none;border-top:1px solid #e4e4eb'>")
 
     panel = widgets.VBox(
-        [css_w, header, render_out, divider, grid],
+        [css_w, _anchor, header, render_out, divider, grid, _js_out],
         layout=widgets.Layout(width="100%", padding="14px", overflow="hidden"))
     panel.add_class(f"mpl-s-{_pid}")
     display(panel)
