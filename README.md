@@ -10,7 +10,6 @@ An **interactive GUI** for **styling matplotlib figures** directly in Jupyter.
 Adjust colors, fonts, axes, legends, and more in real time **without touching your plot code.**
 
 
-
 ## Installation
 
 ```bash
@@ -18,7 +17,6 @@ pip install mplstudio
 ```
 
 Requires `Python 3.9+`, Jupyter Notebook or JupyterLab, and `matplotlib ≥ 3.5`.
-
 
 
 ## Quick Start
@@ -35,8 +33,9 @@ ax.legend()
 mplstudio.studio(fig)
 ```
 
-This displays an interactive control panel below your figure with live preview.
+![mplstudio control panel](docs/screenshot.png)
 
+For detailed usage examples, see [`examples/demo.ipynb`](examples/demo.ipynb).
 
 
 ## API Reference
@@ -70,8 +69,6 @@ mplstudio.available_sections()
 ```
 
 
-
-
 ## Available Sections
 
 | Section | Controls |
@@ -86,39 +83,13 @@ mplstudio.available_sections()
 | `palette_suggestions` | Colorblind-safe palette recommendations filtered by use case and background |
 
 
-
-
 ## Palette Utilities
 
-mplstudio ships a curated palette library and color science tools you can use independently of the GUI.
-
-```python
-from mplstudio import get_palette, smart_palette, recommend, palette_names
-
-# List all available palettes
-palette_names()
-
-# Get colors from a named palette
-colors = get_palette("Okabe-Ito")          # colorblind-safe, 8 colors
-colors = get_palette("Tableau 10")         # familiar defaults
-
-# Generate N maximally distinct colors using CIELAB ΔE greedy selection
-colors = smart_palette(6)                  # always a superset of smart_palette(5)
-
-# Find palettes matching criteria
-suggestions = recommend(
-    n_colors=5,
-    colorblind_safe=True,
-    use_case="categorical",   # "categorical" | "sequential" | "diverging"
-    background="light",       # "light" | "dark"
-    top_k=3,
-)
-for p in suggestions:
-    print(p["name"], p["colors"])
-```
+mplstudio ships a curated palette library and color science tools you can use independently of the GUI: `get_palette`, `smart_palette`, `recommend`, `palette_names`, and `delta_e`. See [`examples/demo.ipynb`](examples/demo.ipynb) for usage examples.
 
 ### Available Palettes
-Palettes for categorical, and continuous variables (sequential and diverging color maps). 
+
+Palettes for categorical, and continuous variables (sequential and diverging color maps).
 
 Following table shows palettes for **categorical** values. For **continuous** variables, mplstudio uses matplotlib's built-in colormaps. See the [matplotlib colormap reference](https://matplotlib.org/stable/gallery/color/colormap_reference.html) for the full list.
 
@@ -143,7 +114,6 @@ Following table shows palettes for **categorical** values. For **continuous** va
 | High Contrast | 5 | light background |
 
 
-
 ## Requirements
 
 - Python ≥ 3.9
@@ -151,7 +121,6 @@ Following table shows palettes for **categorical** values. For **continuous** va
 - ipywidgets ≥ 8.0
 - ipykernel ≥ 6.0
 - Jupyter Notebook or JupyterLab
-
 
 
 ## License
