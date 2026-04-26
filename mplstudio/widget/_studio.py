@@ -73,6 +73,7 @@ def studio(
     _size_cb = widgets.Checkbox(value=False, indent=False, description="")
     _size_cb.layout.display = "none"
     _pid = _size_cb.model_id[:8]
+    _img_id = f"mpl-img-{_pid}"   # unique id for the preview <img> element
 
     css_w = widgets.HTML(value=_theme_css(_pid, dark))
     size_toggle = _ios_toggle(_size_cb.model_id, "Actual size", _pid, "size")
@@ -95,11 +96,40 @@ def studio(
         with render_out:
             render_out.clear_output(wait=True)
             display(widgets.HTML(
-                f'<div style="{ds}"><img src="data:image/png;base64,{img_b64}" style="{is_}"></div>'
+                f'<div style="{ds}"><img id="{_img_id}" src="data:image/png;base64,{img_b64}" style="{is_}"></div>'
             ))
 
     _size_cb.observe(lambda _: _refresh(), names="value")
     _refresh()
+
+    # ── copy / save toolbar ───────────────────────────────────────────────
+    # Single-quoted onclick so double-quotes work freely inside the JS.
+    _ibtn = (
+        "cursor:pointer;background:transparent;"
+        "border:1.5px solid var(--mpl-accent,#6366f1);"
+        "color:var(--mpl-accent,#6366f1);border-radius:6px;"
+        "padding:2px 9px;font-size:0.78em;font-family:inherit;"
+        "transition:opacity 0.15s;"
+    )
+    _copy_js = (
+        f'var img=document.getElementById("{_img_id}");'
+        f'var btn=this;'
+        f'fetch(img.src).then(r=>r.blob())'
+        f'.then(b=>navigator.clipboard.write([new ClipboardItem({{"image/png":b}})]))'
+        f'.then(()=>{{btn.textContent="✓ Copied";setTimeout(()=>btn.textContent="Copy",1500)}})'
+        f'.catch(()=>{{btn.textContent="Failed";setTimeout(()=>btn.textContent="Copy",1500)}})'
+    )
+    _save_js = (
+        f'var a=document.createElement("a");'
+        f'a.href=document.getElementById("{_img_id}").src;'
+        f'a.download="figure.png";a.click()'
+    )
+    img_toolbar = widgets.HTML(
+        f'<span style="display:inline-flex;gap:5px;align-items:center">'
+        f'<button style="{_ibtn}" onclick=\'{_copy_js}\'>Copy</button>'
+        f'<button style="{_ibtn}" onclick=\'{_save_js}\'>Save</button>'
+        f'</span>'
+    )
 
     # ── build shared context ──────────────────────────────────────────────
     ctx = _PanelCtx(fig=fig, pid=_pid, dark=dark, refresh=_refresh)
@@ -138,8 +168,8 @@ def studio(
         "mpl<span style='color:var(--mpl-accent,#6366f1)'>studio</span></span>")
 
     header = widgets.HBox(
-        [logo, widgets.HBox([size_toggle, _size_cb],
-                            layout=widgets.Layout(align_items="center"))],
+        [logo, widgets.HBox([img_toolbar, size_toggle, _size_cb],
+                            layout=widgets.Layout(align_items="center", gap="10px"))],
         layout=widgets.Layout(justify_content="space-between", align_items="center",
                               width="100%", margin="0 0 6px 0"))
 
