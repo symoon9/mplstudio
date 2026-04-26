@@ -151,4 +151,4 @@ for p in suggestions:
 
 ## License
 
-[MIT](LICENSE) © 2024 Seo-Yoon Moon
+[MIT](LICENSE) © 2026 Seo-Yoon Moon
