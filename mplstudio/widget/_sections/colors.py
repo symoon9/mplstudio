@@ -7,7 +7,7 @@ import ipywidgets as widgets
 from .._ctx import _PanelCtx
 from .._helpers import _section, _swatches_div, _build_palette_preview, _build_colormap_gradient
 from ... import style as S
-from ...palettes import palette_names, SEQUENTIAL_CMAPS, DIVERGING_CMAPS, smart_palette
+from ...palettes import palette_names, get_palette, SEQUENTIAL_CMAPS, DIVERGING_CMAPS, smart_palette
 
 
 def build(ctx: _PanelCtx) -> widgets.VBox:
@@ -20,7 +20,7 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
         "mixed":       f"mixed · {n_series} categorical + colormap",
     }[plot_type]
     type_badge = widgets.HTML(
-        f"<span style='font-size:0.78em;color:#888'>Detected: {_type_label}</span>")
+        f"<span style='font-size:0.9em;color:#888'>Detected: {_type_label}</span>")
 
     cat_box_children: list[widgets.Widget] = []
 
@@ -28,15 +28,17 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
         color_mode = widgets.ToggleButtons(
             options=["Palette", "Manual", "Smart"], value="Palette",
             description="Mode:", style={"button_width": "62px"},
-            layout=widgets.Layout(width="100%", margin="0 0 4px 0"))
+            layout=widgets.Layout(width="100%", margin="4px 4px"))
 
+        _pal_names = palette_names()
+        _pal_options = [(f"{n}  ({len(get_palette(n))})", n) for n in _pal_names]
         palette_select = widgets.Dropdown(
-            options=palette_names(), description="Palette",
+            options=_pal_options, description="Palette",
             style={"description_width": "58px"},
-            layout=widgets.Layout(width="100%"))
-        palette_preview_w = _build_palette_preview(palette_names()[0])
+            layout=widgets.Layout(width="95%"))
+        palette_preview_w = _build_palette_preview(_pal_names[0])
         palette_col = widgets.VBox([palette_select, palette_preview_w],
-                                   layout=widgets.Layout(width="100%"))
+                                   layout=widgets.Layout(width="95%"))
 
         line_colors = S.get_line_colors(ctx.fig)
         line_labels = S.get_line_labels(ctx.fig)

@@ -120,12 +120,12 @@ def _theme_css(pid: str, dark: bool) -> str:
   background:{accent} !important;border-color:{accent} !important;
   color:#fff !important;border-radius:8px !important;box-shadow:none;
 }}
-/* collapsible per-* button */
+/* collapsible per-* button — light accent tint background */
 .mpl-per-{pid} button {{
-  background:{bg} !important;
-  border:1.5px solid {border} !important;
+  background:{accent}22 !important;
+  border:1.5px solid {accent}66 !important;
   border-radius:8px !important;
-  color:{muted} !important;
+  color:{text} !important;
   font-size:0.82em !important;
   padding:4px 10px !important;
   width:100% !important;
@@ -134,7 +134,7 @@ def _theme_css(pid: str, dark: bool) -> str:
   cursor:pointer !important;
 }}
 .mpl-per-{pid} button:hover {{
-  background:{card} !important;
+  background:{accent}33 !important;
   border-color:{accent} !important;
 }}
 /* checkbox accent */
