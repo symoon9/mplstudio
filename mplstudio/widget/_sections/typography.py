@@ -5,7 +5,7 @@ from __future__ import annotations
 import ipywidgets as widgets
 
 from .._ctx import _PanelCtx
-from .._helpers import _section, _per_btn, _mk_slider
+from .._helpers import _section, _per_btn, _mk_slider, _mk_slider
 from ... import style as S
 
 

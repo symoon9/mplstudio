@@ -121,7 +121,7 @@ def _theme_css(pid: str, dark: bool) -> str:
   color:#fff !important;border-radius:8px !important;box-shadow:none;
 }}
 /* collapsible per-* button — light accent tint background */
-.mpl-per-{pid} button {{
+.mpl-per-{pid} .mpl-per-btn button {{
   background:{accent}22 !important;
   border:1.5px solid {accent}66 !important;
   border-radius:8px !important;
@@ -133,7 +133,7 @@ def _theme_css(pid: str, dark: bool) -> str:
   box-shadow:none !important;
   cursor:pointer !important;
 }}
-.mpl-per-{pid} button:hover {{
+.mpl-per-{pid} .mpl-per-btn button:hover {{
   background:{accent}33 !important;
   border-color:{accent} !important;
 }}

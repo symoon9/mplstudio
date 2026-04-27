@@ -11,8 +11,8 @@ from ... import style as S
 
 def build(ctx: _PanelCtx) -> widgets.VBox:
     w_init, h_init = ctx.fig.get_size_inches()
-    fig_width = _mk_slider(widgets.FloatSlider, "Width (in)", "82px",
-                           value=w_init, min=2, max=25, step=0.5)
+    fig_width  = _mk_slider(widgets.FloatSlider, "Width (in)",  "82px",
+                            value=w_init, min=2, max=25, step=0.5)
     fig_height = _mk_slider(widgets.FloatSlider, "Height (in)", "82px",
                             value=h_init, min=2, max=25, step=0.5)
 

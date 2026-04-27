@@ -27,6 +27,7 @@ def _per_btn(label: str, pid: str) -> tuple[widgets.Button, widgets.VBox, list]:
     btn = widgets.Button(description=f"{label}  ▾", button_style="",
                          layout=widgets.Layout(width="100%"))
     btn.add_class(f"mpl-per-{pid}")
+    btn.add_class(f"mpl-per-btn")
 
     def _toggle(_):
         flag[0] = not flag[0]

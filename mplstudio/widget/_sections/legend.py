@@ -59,7 +59,7 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
         widgets.Text(value=txt,
                      description=(txt[:12] + "…:" if len(txt) > 12 else f"{txt}:"),
                      style={"description_width": "78px"},
-                     layout=widgets.Layout(width="100%"), continuous_update=False)
+                     layout=widgets.Layout(width="90%"), continuous_update=False)
         for txt in leg_texts
     ]
 

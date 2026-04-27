@@ -17,9 +17,9 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
         layout=widgets.Layout(width="100%"))
 
     spine_header = widgets.HTML(
-        "<span style='color:#888'>Spines</span>")
+        "<span >Spines</span>")
     spine_style = widgets.ToggleButtons(
-        options=S.SPINE_STYLES, value="box",
+        options=S.SPINE_STYLES, value=S.SPINE_STYLES[0],
         description="",
         style={"button_width": "74px"},
         layout=widgets.Layout(width="100%"))
