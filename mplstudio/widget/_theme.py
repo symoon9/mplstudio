@@ -21,6 +21,12 @@ def _theme_css(pid: str, dark: bool) -> str:
 
     accent_glow = accent + "33"  # 20 % opacity for focus ring
 
+    # rgba() form of accent for per-button tint (8-digit hex alpha has spotty support)
+    _h = accent.lstrip("#")
+    _r, _g, _b = int(_h[0:2], 16), int(_h[2:4], 16), int(_h[4:6], 16)
+    accent_tint      = f"rgba({_r},{_g},{_b},0.14)"
+    accent_tint_hover = f"rgba({_r},{_g},{_b},0.26)"
+
     return f"""<style>
 /* ── mplstudio {pid} ── */
 .mpl-s-{pid} {{
@@ -120,10 +126,11 @@ def _theme_css(pid: str, dark: bool) -> str:
   background:{accent} !important;border-color:{accent} !important;
   color:#fff !important;border-radius:8px !important;box-shadow:none;
 }}
-/* collapsible per-* button — light accent tint background */
-.mpl-per-{pid} button {{
-  background:{accent}22 !important;
-  border:1.5px solid {accent}66 !important;
+/* collapsible per-* button — light accent tint background
+   add_class() puts the class on the <button> element itself, so target it directly */
+button.mpl-per-{pid} {{
+  background:{accent_tint} !important;
+  border:1.5px solid {accent}88 !important;
   border-radius:8px !important;
   color:{text} !important;
   font-size:0.82em !important;
@@ -133,8 +140,8 @@ def _theme_css(pid: str, dark: bool) -> str:
   box-shadow:none !important;
   cursor:pointer !important;
 }}
-.mpl-per-{pid} button:hover {{
-  background:{accent}33 !important;
+button.mpl-per-{pid}:hover {{
+  background:{accent_tint_hover} !important;
   border-color:{accent} !important;
 }}
 /* checkbox accent */
