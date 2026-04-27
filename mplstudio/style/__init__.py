@@ -28,6 +28,7 @@ from ._legend import (
     LEGEND_LOCATIONS,
 )
 from ._grid_spines import set_grid, set_spine_style, SPINE_STYLES
+from ._ticks import set_tick_labels_visible, set_xtick_rotation, set_tick_interval
 
 __all__ = [
     # figure
@@ -47,4 +48,6 @@ __all__ = [
     "set_legend_title", "LEGEND_LOCATIONS",
     # grid & spines
     "set_grid", "set_spine_style", "SPINE_STYLES",
+    # ticks
+    "set_tick_labels_visible", "set_xtick_rotation", "set_tick_interval",
 ]

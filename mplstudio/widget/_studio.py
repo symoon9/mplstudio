@@ -21,6 +21,7 @@ from ._sections import (
     colors as _sec_colors,
     opacity as _sec_opacity,
     axes as _sec_axes,
+    ticks as _sec_ticks,
     legend as _sec_legend,
     grid_spines as _sec_grid_spines,
     palette_suggestions as _sec_palette_suggestions,
@@ -36,6 +37,7 @@ _SECTION_BUILDERS = [
     ("colors",              _sec_colors),
     ("alpha",               _sec_opacity),
     ("axes",                _sec_axes),
+    ("ticks",               _sec_ticks),
     ("grid_spines",         _sec_grid_spines),
     ("palette_suggestions", _sec_palette_suggestions),
 ]
@@ -50,6 +52,7 @@ def studio(
     *,
     show: list[str] | None = None,
     dark: bool = False,
+    palette: dict[str, str] | None = None,
 ) -> None:
     """Display the mplstudio control panel.
 
@@ -61,6 +64,9 @@ def studio(
         Section names to display; ``None`` shows all.
     dark : bool
         Use Catppuccin Mocha dark theme (default: light/indigo).
+    palette : dict[str, str], optional
+        Label → hex color mapping (e.g. ``adata.uns["cell_type_colors"]``).
+        When provided, a "Custom" color mode is added to the Colors section.
     """
     if fig is None:
         fig = plt.gcf()
@@ -136,7 +142,7 @@ def studio(
     _refresh()
 
     # ── build shared context ──────────────────────────────────────────────
-    ctx = _PanelCtx(fig=fig, pid=_pid, dark=dark, refresh=_refresh)
+    ctx = _PanelCtx(fig=fig, pid=_pid, dark=dark, refresh=_refresh, palette=palette)
 
     # ── build sections ────────────────────────────────────────────────────
     sections: list[widgets.Widget] = []
