@@ -1,8 +1,4 @@
-<!-- <div align="center">
-  <img src="docs/mplstudio_logo_square.png" alt="mplstudio" width="70%">
-</div> -->
 # mplstudio
-
 [![PyPI version](https://img.shields.io/pypi/v/mplstudio)](https://pypi.org/project/mplstudio/)
 [![Python](https://img.shields.io/pypi/pyversions/mplstudio)](https://pypi.org/project/mplstudio/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -11,9 +7,8 @@
 An **interactive GUI** for **styling matplotlib figures** directly in Jupyter.
 
 Adjust colors, fonts, axes, legends, and more in real time **without touching your plot code.**
-<div align="center">
-  <img src="docs/mplstudio_logo_square.png" alt="mplstudio" width="30%">
-</div>
+
+![mplstudio control panel](docs/screenshot_readme.png)
 
 ## Installation
 
@@ -37,8 +32,6 @@ ax.legend()
 
 mplstudio.studio(fig)
 ```
-
-![mplstudio control panel](docs/screenshot.png)
 
 For detailed usage examples, see [`examples/demo.ipynb`](examples/demo.ipynb).
 
