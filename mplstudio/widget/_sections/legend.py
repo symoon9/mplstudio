@@ -81,8 +81,8 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
     # ── Layout: title → location → bbox → labels toggle ──────────────────
     children = [
         title_input,
+        *labels_section,
         legend_loc,
         bbox_header, bbox_x, bbox_y,
-        *labels_section,
     ]
     return _section("Legend", ctx.pid, *children)

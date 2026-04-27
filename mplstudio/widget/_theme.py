@@ -24,8 +24,8 @@ def _theme_css(pid: str, dark: bool) -> str:
     # rgba() form of accent for per-button tint (8-digit hex alpha has spotty support)
     _h = accent.lstrip("#")
     _r, _g, _b = int(_h[0:2], 16), int(_h[2:4], 16), int(_h[4:6], 16)
-    accent_tint      = f"rgba({_r},{_g},{_b},0.14)"
-    accent_tint_hover = f"rgba({_r},{_g},{_b},0.26)"
+    accent_tint      = f"rgba({_r},{_g},{_b},0.2)"
+    accent_tint_hover = f"rgba({_r},{_g},{_b},0.3)"
 
     return f"""<style>
 /* ── mplstudio {pid} ── */
@@ -129,20 +129,19 @@ def _theme_css(pid: str, dark: bool) -> str:
 /* collapsible per-* button — light accent tint background
    add_class() puts the class on the <button> element itself, so target it directly */
 button.mpl-per-{pid} {{
-  background:{accent_tint} !important;
-  border:1.5px solid {accent}88 !important;
-  border-radius:8px !important;
-  color:{text} !important;
-  font-size:0.82em !important;
-  padding:4px 10px !important;
+  background:none !important;
+  color:{accent} !important;
+  font-size:0.85em !important;
+
   width:100% !important;
   text-align:left !important;
   box-shadow:none !important;
   cursor:pointer !important;
+  padding:0 !important;
+  font-weight:300 !important;
 }}
 button.mpl-per-{pid}:hover {{
-  background:{accent_tint_hover} !important;
-  border-color:{accent} !important;
+  color:{accent}aa !important;
 }}
 /* checkbox accent */
 .mpl-s-{pid} .widget-checkbox input {{ accent-color:{accent}; }}

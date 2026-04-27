@@ -67,7 +67,7 @@ Return a sorted list of all valid section names.
 ```python
 mplstudio.available_sections()
 # ['alpha', 'axes', 'colors', 'figure_size', 'grid_spines',
-#  'legend', 'palette_suggestions', 'typography']
+#  'legend', 'palette_suggestions', 'save', 'typography']
 ```
 
 
@@ -77,12 +77,13 @@ mplstudio.available_sections()
 |---------|----------|
 | `figure_size` | Width and height sliders |
 | `typography` | Font size for all elements or individually (title, labels, ticks, legend) |
-| `colors` | Palette picker, manual per-series color pickers, smart CIELAB palette, colormap selector, background color |
+| `colors` | Palette picker (with color count), manual per-series color pickers, smart CIELAB palette, colormap selector, background color |
 | `alpha` | Global opacity slider + per-series opacity |
 | `axes` | Title, x/y axis labels, x/y limits — supports multi-axis figures |
-| `legend` | Location dropdown, legend entry names, bbox position |
-| `grid_spines` | Grid on/off, spine style (box / left-bottom / none) |
+| `legend` | Legend title, collapsible series label editor, location dropdown, bbox position |
+| `grid_spines` | Grid toggle, spine style (Box / 2-Side / None) |
 | `palette_suggestions` | Colorblind-safe palette recommendations filtered by use case and background |
+| `save` | Save figure with custom filename, path, DPI, and format (png, jpg, pdf, svg, eps) |
 
 
 ## Palette Utilities
