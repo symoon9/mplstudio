@@ -10,14 +10,22 @@ from ... import style as S
 
 
 def build(ctx: _PanelCtx) -> widgets.VBox:
-    grid_toggle = widgets.Checkbox(value=False, description="Show grid")
+    grid_toggle = widgets.ToggleButtons(
+        options=["Off", "On"], value="Off",
+        description="Grid",
+        style={"description_width": "32px", "button_width": "52px"},
+        layout=widgets.Layout(width="100%"))
+
+    spine_header = widgets.HTML(
+        "<span >Spines</span>")
     spine_style = widgets.ToggleButtons(
-        options=S.SPINE_STYLES, value="box",
-        description="Spines:", style={"button_width": "84px"},
+        options=S.SPINE_STYLES, value=S.SPINE_STYLES[0],
+        description="",
+        style={"button_width": "74px"},
         layout=widgets.Layout(width="100%"))
 
     def _on_grid(_):
-        S.set_grid(ctx.fig, grid_toggle.value)
+        S.set_grid(ctx.fig, grid_toggle.value == "On")
         ctx.refresh()
 
     def _on_spine(_):
@@ -26,4 +34,4 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
 
     grid_toggle.observe(_on_grid, names="value")
     spine_style.observe(_on_spine, names="value")
-    return _section("Grid & Spines", ctx.pid, grid_toggle, spine_style)
+    return _section("Grid & Spines", ctx.pid, grid_toggle, spine_header, spine_style)

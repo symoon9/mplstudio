@@ -21,6 +21,12 @@ def _theme_css(pid: str, dark: bool) -> str:
 
     accent_glow = accent + "33"  # 20 % opacity for focus ring
 
+    # rgba() form of accent for per-button tint (8-digit hex alpha has spotty support)
+    _h = accent.lstrip("#")
+    _r, _g, _b = int(_h[0:2], 16), int(_h[2:4], 16), int(_h[4:6], 16)
+    accent_tint      = f"rgba({_r},{_g},{_b},0.2)"
+    accent_tint_hover = f"rgba({_r},{_g},{_b},0.3)"
+
     return f"""<style>
 /* ── mplstudio {pid} ── */
 .mpl-s-{pid} {{
@@ -46,16 +52,21 @@ def _theme_css(pid: str, dark: bool) -> str:
   width:14px;height:14px;top:-4px;cursor:pointer;
   box-shadow:0 1px 4px rgba(0,0,0,.25);
 }}
-/* slider readout — styled like a text input so it's obviously editable */
+/* slider readout — compact editable input */
 .mpl-s-{pid} .widget-readout {{
   background:{inp_bg} !important;
   border:1.5px solid {border} !important;
   border-radius:6px !important;
   color:{text} !important;
   padding:1px 5px !important;
-  min-width:58px !important;
+  min-width:44px !important;
+  max-width:52px !important;
+  width:52px !important;
+  height:22px !important;
+  line-height:20px !important;
+  box-sizing:border-box !important;
   box-shadow:inset 0 1px 2px rgba(0,0,0,.07) !important;
-  font-size:0.85em !important;
+  font-size:0.82em !important;
 }}
 /* text / number inputs */
 .mpl-s-{pid} input[type=text],
@@ -98,7 +109,7 @@ def _theme_css(pid: str, dark: bool) -> str:
   position:absolute;right:8px;top:50%;
   transform:translateY(-50%);
   color:{muted};pointer-events:none;
-  font-size:11px;line-height:1;
+  font-size:16px;line-height:1;
 }}
 /* toggle buttons group */
 .mpl-s-{pid} .widget-toggle-buttons .widget-toggle-button {{
@@ -115,22 +126,22 @@ def _theme_css(pid: str, dark: bool) -> str:
   background:{accent} !important;border-color:{accent} !important;
   color:#fff !important;border-radius:8px !important;box-shadow:none;
 }}
-/* collapsible per-* button */
-.mpl-per-{pid} button {{
-  background:{bg} !important;
-  border:1.5px solid {border} !important;
-  border-radius:8px !important;
-  color:{muted} !important;
-  font-size:0.82em !important;
-  padding:4px 10px !important;
+/* collapsible per-* button — light accent tint background
+   add_class() puts the class on the <button> element itself, so target it directly */
+button.mpl-per-{pid} {{
+  background:none !important;
+  color:{accent} !important;
+  font-size:0.85em !important;
+
   width:100% !important;
   text-align:left !important;
   box-shadow:none !important;
   cursor:pointer !important;
+  padding:0 !important;
+  font-weight:300 !important;
 }}
-.mpl-per-{pid} button:hover {{
-  background:{card} !important;
-  border-color:{accent} !important;
+button.mpl-per-{pid}:hover {{
+  color:{accent}aa !important;
 }}
 /* checkbox accent */
 .mpl-s-{pid} .widget-checkbox input {{ accent-color:{accent}; }}

@@ -40,3 +40,11 @@ def set_legend_bbox(fig: Figure, x: float, y: float, ax_idx: int = 0) -> None:
     legend = fig.axes[ax_idx].get_legend()
     if legend:
         legend.set_bbox_to_anchor((x, y))
+
+
+def set_legend_title(fig: Figure, title: str, ax_idx: int = 0) -> None:
+    if ax_idx >= len(fig.axes):
+        return
+    legend = fig.axes[ax_idx].get_legend()
+    if legend:
+        legend.set_title(title)

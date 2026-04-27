@@ -1,15 +1,14 @@
 # mplstudio
-
 [![PyPI version](https://img.shields.io/pypi/v/mplstudio)](https://pypi.org/project/mplstudio/)
 [![Python](https://img.shields.io/pypi/pyversions/mplstudio)](https://pypi.org/project/mplstudio/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/symoon9/mplstudio/actions/workflows/ci.yml/badge.svg)](https://github.com/symoon9/mplstudio/actions/workflows/ci.yml)
 
-An interactive GUI for styling matplotlib figures — directly in Jupyter.
+An **interactive GUI** for **styling matplotlib figures** directly in Jupyter.
 
-Adjust colors, fonts, axes, legends, and more in real time without touching your plot code.
+Adjust colors, fonts, axes, legends, and more in real time **without touching your plot code.**
 
----
+![mplstudio control panel](docs/screenshot_readme.png)
 
 ## Installation
 
@@ -17,9 +16,8 @@ Adjust colors, fonts, axes, legends, and more in real time without touching your
 pip install mplstudio
 ```
 
-Requires Python 3.9+, Jupyter Notebook or JupyterLab, and matplotlib ≥ 3.5.
+Requires `Python 3.9+`, Jupyter Notebook or JupyterLab, and `matplotlib ≥ 3.5`.
 
----
 
 ## Quick Start
 
@@ -35,9 +33,8 @@ ax.legend()
 mplstudio.studio(fig)
 ```
 
-This displays an interactive control panel below your figure with live preview.
+For detailed usage examples, see [`examples/demo.ipynb`](examples/demo.ipynb).
 
----
 
 ## API Reference
 
@@ -66,56 +63,34 @@ Return a sorted list of all valid section names.
 ```python
 mplstudio.available_sections()
 # ['alpha', 'axes', 'colors', 'figure_size', 'grid_spines',
-#  'legend', 'palette_suggestions', 'typography']
+#  'legend', 'palette_suggestions', 'save', 'typography']
 ```
 
----
 
-## Sections
+## Available Sections
 
 | Section | Controls |
 |---------|----------|
 | `figure_size` | Width and height sliders |
 | `typography` | Font size for all elements or individually (title, labels, ticks, legend) |
-| `colors` | Palette picker, manual per-series color pickers, smart CIELAB palette, colormap selector, background color |
+| `colors` | Palette picker (with color count), manual per-series color pickers, smart CIELAB palette, colormap selector, background color |
 | `alpha` | Global opacity slider + per-series opacity |
 | `axes` | Title, x/y axis labels, x/y limits — supports multi-axis figures |
-| `legend` | Location dropdown, legend entry names, bbox position |
-| `grid_spines` | Grid on/off, spine style (box / left-bottom / none) |
+| `legend` | Legend title, collapsible series label editor, location dropdown, bbox position |
+| `grid_spines` | Grid toggle, spine style (Box / 2-Side / None) |
 | `palette_suggestions` | Colorblind-safe palette recommendations filtered by use case and background |
+| `save` | Save figure with custom filename, path, DPI, and format (png, jpg, pdf, svg, eps) |
 
----
 
 ## Palette Utilities
 
-mplstudio ships a curated palette library and color science tools you can use independently of the GUI.
-
-```python
-from mplstudio import get_palette, smart_palette, recommend, palette_names
-
-# List all available palettes
-palette_names()
-
-# Get colors from a named palette
-colors = get_palette("Okabe-Ito")          # colorblind-safe, 8 colors
-colors = get_palette("Tableau 10")         # familiar defaults
-
-# Generate N maximally distinct colors using CIELAB ΔE greedy selection
-colors = smart_palette(6)                  # always a superset of smart_palette(5)
-
-# Find palettes matching criteria
-suggestions = recommend(
-    n_colors=5,
-    colorblind_safe=True,
-    use_case="categorical",   # "categorical" | "sequential" | "diverging"
-    background="light",       # "light" | "dark"
-    top_k=3,
-)
-for p in suggestions:
-    print(p["name"], p["colors"])
-```
+mplstudio ships a curated palette library and color science tools you can use independently of the GUI: `get_palette`, `smart_palette`, `recommend`, `palette_names`, and `delta_e`. See [`examples/demo.ipynb`](examples/demo.ipynb) for usage examples.
 
 ### Available Palettes
+
+Palettes for categorical, and continuous variables (sequential and diverging color maps).
+
+Following table shows palettes for **categorical** values. For **continuous** variables, mplstudio uses matplotlib's built-in colormaps. See the [matplotlib colormap reference](https://matplotlib.org/stable/gallery/color/colormap_reference.html) for the full list.
 
 | Palette | Colors | Tags |
 |---------|--------|------|
@@ -137,7 +112,6 @@ for p in suggestions:
 | Pastel | 6 | light background |
 | High Contrast | 5 | light background |
 
----
 
 ## Requirements
 
@@ -147,8 +121,7 @@ for p in suggestions:
 - ipykernel ≥ 6.0
 - Jupyter Notebook or JupyterLab
 
----
 
 ## License
 
-[MIT](LICENSE) © 2024 Seo-Yoon Moon
+[MIT](LICENSE) © 2026 Seo-Yoon Moon
