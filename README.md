@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/mplstudio_logo_square.png" alt="mplstudio" width="50%">
+  <img src="docs/mplstudio_logo_square.png" alt="mplstudio" width="70%">
 </div>
 
 [![PyPI version](https://img.shields.io/pypi/v/mplstudio)](https://pypi.org/project/mplstudio/)
