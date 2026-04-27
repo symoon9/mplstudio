@@ -19,6 +19,7 @@ class _PanelCtx:
     pid: str
     dark: bool
     refresh: Callable[[], None]
+    palette: dict | None = None                          # {label: hex} e.g. from adata.uns
     ax_idx: list = field(default_factory=lambda: [0])   # [int]
     fb: list = field(default_factory=lambda: [False])   # font busy guard
     ab: list = field(default_factory=lambda: [False])   # alpha busy guard

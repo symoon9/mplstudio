@@ -25,8 +25,12 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
     cat_box_children: list[widgets.Widget] = []
 
     if plot_type in ("categorical", "mixed"):
+        _has_palette = ctx.palette is not None
+        _mode_options = ["Palette", "Manual", "Smart"]
+        if _has_palette:
+            _mode_options = ["Custom"] + _mode_options
         color_mode = widgets.ToggleButtons(
-            options=["Palette", "Manual", "Smart"], value="Palette",
+            options=_mode_options, value=_mode_options[0],
             description="Mode:", style={"button_width": "62px"},
             layout=widgets.Layout(width="100%", margin="4px 4px"))
 
@@ -39,12 +43,20 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
         palette_preview_w = _build_palette_preview(_pal_names[0])
         palette_col = widgets.VBox([palette_select, palette_preview_w],
                                    layout=widgets.Layout(width="95%"))
+        palette_col.layout.display = "none" if _has_palette else ""
 
         line_colors = S.get_line_colors(ctx.fig)
         line_labels = S.get_line_labels(ctx.fig)
+
+        # Pre-fill Manual pickers from ctx.palette when available
+        def _picker_color(lbl: str, default: str) -> str:
+            if ctx.palette and lbl in ctx.palette:
+                return ctx.palette[lbl]
+            return default
+
         manual_pickers = [
             widgets.ColorPicker(
-                value=c,
+                value=_picker_color(lbl, c),
                 description=(lbl[:13] + "…" if len(lbl) > 13 else lbl),
                 style={"description_width": "82px"}, concise=False,
                 layout=widgets.Layout(width="90%"))
@@ -64,9 +76,23 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
                                      layout=widgets.Layout(width="100%"))
         smart_section.layout.display = "none"
 
+        # Custom section: read-only swatches from ctx.palette
+        if _has_palette:
+            _custom_colors = [ctx.palette.get(lbl, c) for c, lbl in zip(line_colors, line_labels)]
+            custom_section = widgets.VBox(
+                [widgets.HTML(_swatches_div(_custom_colors))] if _custom_colors
+                else [widgets.HTML("<i style='color:#888'>No matching labels.</i>")],
+                layout=widgets.Layout(width="100%"))
+        else:
+            custom_section = widgets.VBox([])
+            custom_section.layout.display = "none"
+
         def _apply_colors():
             m = color_mode.value
-            if m == "Manual":
+            if m == "Custom":
+                S.set_line_colors_manual(ctx.fig, [ctx.palette.get(lbl, c)
+                                                    for c, lbl in zip(line_colors, line_labels)])
+            elif m == "Manual":
                 S.set_line_colors_manual(ctx.fig, [p.value for p in manual_pickers])
             elif m == "Smart":
                 S.set_line_colors_manual(ctx.fig, smart_palette(smart_n.value))
@@ -83,10 +109,13 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
             _apply_colors()
 
         def _on_color_mode_change(c):
+            custom_section.layout.display = "none"
             palette_col.layout.display = "none"
             manual_section.layout.display = "none"
             smart_section.layout.display = "none"
-            if c["new"] == "Manual":
+            if c["new"] == "Custom":
+                custom_section.layout.display = ""
+            elif c["new"] == "Manual":
                 manual_section.layout.display = ""
             elif c["new"] == "Smart":
                 smart_section.layout.display = ""
@@ -100,7 +129,7 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
         for p in manual_pickers:
             p.observe(lambda _: _apply_colors(), names="value")
 
-        cat_box_children = [color_mode, palette_col, manual_section, smart_section]
+        cat_box_children = [color_mode, custom_section, palette_col, manual_section, smart_section]
 
     cmap_box_children: list[widgets.Widget] = []
 

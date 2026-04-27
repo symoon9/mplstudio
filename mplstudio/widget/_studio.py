@@ -50,6 +50,7 @@ def studio(
     *,
     show: list[str] | None = None,
     dark: bool = False,
+    palette: dict[str, str] | None = None,
 ) -> None:
     """Display the mplstudio control panel.
 
@@ -61,6 +62,9 @@ def studio(
         Section names to display; ``None`` shows all.
     dark : bool
         Use Catppuccin Mocha dark theme (default: light/indigo).
+    palette : dict[str, str], optional
+        Label → hex color mapping (e.g. ``adata.uns["cell_type_colors"]``).
+        When provided, a "Custom" color mode is added to the Colors section.
     """
     if fig is None:
         fig = plt.gcf()
@@ -136,7 +140,7 @@ def studio(
     _refresh()
 
     # ── build shared context ──────────────────────────────────────────────
-    ctx = _PanelCtx(fig=fig, pid=_pid, dark=dark, refresh=_refresh)
+    ctx = _PanelCtx(fig=fig, pid=_pid, dark=dark, refresh=_refresh, palette=palette)
 
     # ── build sections ────────────────────────────────────────────────────
     sections: list[widgets.Widget] = []
