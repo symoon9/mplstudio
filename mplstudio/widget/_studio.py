@@ -21,6 +21,7 @@ from ._sections import (
     colors as _sec_colors,
     opacity as _sec_opacity,
     axes as _sec_axes,
+    ticks as _sec_ticks,
     legend as _sec_legend,
     grid_spines as _sec_grid_spines,
     palette_suggestions as _sec_palette_suggestions,
@@ -36,6 +37,7 @@ _SECTION_BUILDERS = [
     ("colors",              _sec_colors),
     ("alpha",               _sec_opacity),
     ("axes",                _sec_axes),
+    ("ticks",               _sec_ticks),
     ("grid_spines",         _sec_grid_spines),
     ("palette_suggestions", _sec_palette_suggestions),
 ]

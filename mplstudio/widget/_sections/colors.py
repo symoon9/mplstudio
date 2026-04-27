@@ -26,7 +26,8 @@ def build(ctx: _PanelCtx) -> widgets.VBox:
 
     if plot_type in ("categorical", "mixed"):
         _has_palette = ctx.palette is not None
-        _mode_options = ["Palette", "Manual", "Smart"]
+        # Smart mode is kept in code but hidden from UI (#28)
+        _mode_options = ["Palette", "Manual"]
         if _has_palette:
             _mode_options = ["Custom"] + _mode_options
         color_mode = widgets.ToggleButtons(

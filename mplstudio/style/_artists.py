@@ -65,8 +65,14 @@ def _set_artist_color(artist, color: str) -> None:
     if isinstance(artist, Line2D):
         artist.set_color(color)
     elif isinstance(artist, PathCollection):
-        artist.set_facecolor(color)
-        artist.set_edgecolor(color)
+        # Preserve the existing facecolor alpha (scatter alpha lives in RGBA channel)
+        fc = artist.get_facecolor()
+        alpha = float(fc[0, 3]) if len(fc) else 1.0
+        artist.set_facecolor((*mcolors.to_rgb(color), alpha))
+        # Only sync edge colour if edges were originally visible
+        ec = artist.get_edgecolor()
+        if len(ec) and ec[0, 3] > 0.01:
+            artist.set_edgecolor((*mcolors.to_rgb(color), float(ec[0, 3])))
 
 
 def _sync_legend_colors(ax) -> None:
